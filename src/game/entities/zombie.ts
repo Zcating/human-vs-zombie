@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 import { CONFIG } from '../core/config';
+import enemyImg from '../../assets/enermy_attack.png';
+
+// 静态加载纹理
+const loader = new THREE.TextureLoader();
+const texture = loader.load(enemyImg);
 
 /**
  * 丧尸实体类
@@ -9,7 +14,7 @@ export class Zombie {
   position = new THREE.Vector3();
   velocity = new THREE.Vector3();
   acceleration = new THREE.Vector3();
-  mesh: THREE.Mesh;
+  mesh: THREE.Sprite; // 使用 Sprite 替代 Mesh
 
   constructor(scene: THREE.Scene) {
     // 随机生成位置（圆形分布）
@@ -17,13 +22,22 @@ export class Zombie {
     const radius = 90 + Math.random() * 30;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
-    this.position.set(x, 1, z);
+    // 调整 Y 轴，确保 Sprite 底部贴地
+    // 假设 Sprite 高度为 8，中心点在 (0.5, 0.5)，则 position.y 需要设为 4
+    this.position.set(x, 4, z);
 
-    // 创建绿色锥体网格
-    const geo = new THREE.ConeGeometry(1, 2.5, 8);
-    geo.rotateX(Math.PI / 2); // 旋转使锥尖朝前
-    const mat = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-    this.mesh = new THREE.Mesh(geo, mat);
+    // 创建 Sprite 材质
+    const mat = new THREE.SpriteMaterial({
+      map: texture,
+      color: 0xffffff,
+      transparent: true,
+    });
+
+    // 创建 Sprite
+    this.mesh = new THREE.Sprite(mat);
+    // 设置 Sprite 尺寸 (根据图片比例调整，这里暂设为 8x8)
+    this.mesh.scale.set(8, 8, 1);
+
     this.mesh.position.copy(this.position);
     scene.add(this.mesh);
   }
@@ -97,8 +111,7 @@ export class Zombie {
 
     this.mesh.position.copy(this.position);
 
-    // 朝向移动方向
-    const lookTarget = this.position.clone().add(this.velocity);
-    this.mesh.lookAt(lookTarget);
+    // Sprite 默认永远朝向摄像机，无需调用 lookAt
+    // 只需要更新位置即可
   }
 }
