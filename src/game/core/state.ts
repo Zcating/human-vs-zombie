@@ -10,6 +10,9 @@ export const state = {
   health: 100,
   gameStarted: false,
   gameOver: false,
+  // 无敌状态相关
+  invincible: false,
+  invincibleTimer: 0, // 无敌时间剩余（毫秒）
   weapon: {
     type: 'pistol' as WeaponType,
     timer: 0, // 特殊武器剩余时间（帧）
@@ -27,6 +30,8 @@ export function resetState() {
   state.health = 100;
   state.gameStarted = false;
   state.gameOver = false;
+  state.invincible = false;
+  state.invincibleTimer = 0;
   state.weapon.type = 'pistol';
   state.weapon.timer = 0;
   state.weapon.cooldown = 0;

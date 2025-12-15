@@ -30,9 +30,9 @@ export class Renderer {
     this.scene.add(this.groundPlane);
 
     // 4. 添加光照
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
     dir.position.set(50, 100, 50);
     dir.castShadow = true;
     this.scene.add(dir);

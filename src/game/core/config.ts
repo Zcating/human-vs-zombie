@@ -9,7 +9,7 @@ export const CONFIG = {
   playerSpeed: isMobile ? 0.6 : 0.9,
 
   // 丧尸移动速度
-  zombieSpeed: 0.35,
+  zombieSpeed: 0.15,
 
   // 丧尸最大转向力（用于分离和追踪行为）
   zombieMaxForce: 0.05,
@@ -27,11 +27,14 @@ export const CONFIG = {
   bulletSpeed: 2.2,
 
   // 相机高度，移动端视角稍高
-  camHeight: isMobile ? 95 : 80,
+  camHeight: isMobile ? 80 : 60,
 
   // 相机距离，移动端稍远
-  camDist: isMobile ? 55 : 45,
+  camDist: isMobile ? 45 : 35,
 
   // 世界边界限制（玩家移动范围）
   worldLimit: 95,
+
+  // 受伤后无敌时间（毫秒）
+  invincibleTime: 2000,
 };

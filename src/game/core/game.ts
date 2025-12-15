@@ -13,6 +13,7 @@ import { UISystem } from '../systems/ui-system';
 import { Loop } from './loop';
 import { state } from './state';
 import { Overlay } from '../scenes/overlay';
+import { CONFIG } from './config';
 
 /**
  * 游戏主类
@@ -42,6 +43,7 @@ export class Game {
     this.renderer = new Renderer();
     this.player = new Player(this.renderer.scene);
     this.overlay = overlay;
+    this.update = this.update.bind(this);
 
     // 启动主循环
     this.loop = new Loop(this.update);
@@ -52,8 +54,13 @@ export class Game {
    * 每一帧的更新逻辑
    * @param dt 时间增量（秒）
    */
-  update = (_dt: number) => {
-    if (state.gameOver) return;
+  update(dt: number) {
+    if (state.gameOver) {
+      return;
+    }
+
+    // 0. 更新无敌状态
+    this.updateInvincibleState(dt);
 
     // 1. 处理输入
     this.input.update();
@@ -110,22 +117,57 @@ export class Game {
     this.collisions.update(this.renderer.scene, this.bullets, this.zombies);
 
     // 8. 检测玩家与丧尸碰撞（游戏结束判定）
-    if (
-      this.zombies.some(
-        (z) => z.position.distanceTo(this.player.mesh.position) < 2
-      )
-    ) {
-      state.health -= 1;
-      if (state.health <= 0) {
-        state.gameOver = true;
-        this.overlay.showGameOver(state.score);
-      }
-    }
+    this.checkPlayerZombieCollisions();
 
     // 9. 更新 UI 显示
     this.ui.update();
 
     // 10. 渲染场景
     this.renderer.render();
-  };
+  }
+
+  /**
+   * 更新无敌状态
+   * 处理倒计时和闪烁效果
+   */
+  private updateInvincibleState(dt: number) {
+    if (state.invincible) {
+      state.invincibleTimer -= dt * 1000;
+      if (state.invincibleTimer <= 0) {
+        state.invincible = false;
+        state.invincibleTimer = 0;
+        this.player.mesh.visible = true; // 确保结束时可见
+      } else {
+        // 简单的闪烁效果：每 100ms 切换可见性
+        this.player.mesh.visible =
+          Math.floor(state.invincibleTimer / 100) % 2 === 0;
+      }
+    } else {
+      this.player.mesh.visible = true;
+    }
+  }
+
+  /**
+   * 检查玩家与丧尸的碰撞
+   * 处理伤害扣除和无敌状态触发
+   */
+  private checkPlayerZombieCollisions() {
+    if (state.invincible) return;
+
+    const hit = this.zombies.some(
+      (z) => z.position.distanceTo(this.player.mesh.position) < 2
+    );
+
+    if (hit) {
+      state.health -= 10;
+      if (state.health <= 0) {
+        state.gameOver = true;
+        this.overlay.showGameOver(state.score);
+      } else {
+        // 触发无敌状态
+        state.invincible = true;
+        state.invincibleTimer = CONFIG.invincibleTime;
+      }
+    }
+  }
 }
