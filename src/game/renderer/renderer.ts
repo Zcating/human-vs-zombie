@@ -15,8 +15,8 @@ export class Renderer {
   constructor() {
     // 1. 创建场景
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a1a1a); // 深灰背景
-    this.scene.fog = new THREE.Fog(0x1a1a1a, 60, 200); // 雾效
+    this.scene.background = new THREE.Color(0xf4e8d0); // 羊皮卷纸背景
+    this.scene.fog = new THREE.Fog(0xf4e8d0, 60, 200); // 雾效
 
     // 2. 添加辅助网格
     const grid = new THREE.GridHelper(200, 50, 0x444444, 0x333333);
