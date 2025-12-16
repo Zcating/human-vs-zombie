@@ -44,6 +44,7 @@ export class Renderer {
       0.1,
       1000
     );
+    this.camera.up.set(0, 0, -1);
     this.camera.position.set(0, CONFIG.camHeight, CONFIG.camDist);
     this.camera.lookAt(0, 0, 0);
 

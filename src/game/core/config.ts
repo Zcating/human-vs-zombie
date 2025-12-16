@@ -27,10 +27,10 @@ export const CONFIG = {
   bulletSpeed: 2.2,
 
   // 相机高度，移动端视角稍高
-  camHeight: isMobile ? 80 : 60,
+  camHeight: isMobile ? 140 : 120,
 
   // 相机距离，移动端稍远
-  camDist: isMobile ? 45 : 35,
+  camDist: 0,
 
   // 世界边界限制（玩家移动范围）
   worldLimit: 95,
