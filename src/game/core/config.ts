@@ -17,6 +17,9 @@ export const CONFIG = {
   // 丧尸生成帧间隔（每多少帧生成一只）
   spawnRate: 60,
 
+  // 场景中最大丧尸数量限制
+  maxZombies: 10,
+
   // 道具生成帧间隔
   itemSpawnRate: 300,
 

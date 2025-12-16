@@ -18,7 +18,10 @@ export class ZombieSystem {
 
     // 1. 生成新丧尸
     if (this.frame % this.spawnRate === 0) {
-      zombies.push(new Zombie(scene));
+      // 检查是否达到最大数量限制
+      if (zombies.length < CONFIG.maxZombies) {
+        zombies.push(new Zombie(scene));
+      }
       // 随着时间推移，加快生成速度（增加难度）
       if (this.spawnRate > 10 && this.frame % 600 === 0) this.spawnRate -= 5;
     }
