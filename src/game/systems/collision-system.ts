@@ -32,7 +32,7 @@ export class CollisionSystem {
         if (b.position.distanceTo(z.position) < 2.0) {
           // 对丧尸造成伤害
           const zombieDead = z.takeDamage(1); // 子弹造成1点伤害
-          
+
           // 移除子弹
           scene.remove(b.mesh);
           bullets.splice(i, 1);
@@ -41,11 +41,10 @@ export class CollisionSystem {
           // 如果丧尸死亡，增加得分并移除
           if (zombieDead) {
             scene.remove(z.mesh);
-            scene.remove(z.healthBar); // 移除血条
             zombies.splice(j, 1);
             state.score += 10;
           }
-          
+
           break; // 子弹击中一个目标后销毁
         }
       }

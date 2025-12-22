@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../core/config';
 import enemyImg from '../../assets/enermy_attack.png';
+import { HealthBar } from './health-bar';
 
 // 静态加载纹理
 const loader = new THREE.TextureLoader();
@@ -17,9 +18,7 @@ export class Zombie {
   mesh: THREE.Sprite; // 使用 Sprite 替代 Mesh
   health: number; // 当前血量
   maxHealth: number; // 最大血量
-  healthBar?: THREE.Group; // 血条组
-  healthBarBg?: THREE.Mesh; // 血条背景
-  healthBarFill?: THREE.Mesh; // 血条填充
+  healthBar: HealthBar; // 血条对象
 
   constructor(scene: THREE.Scene, health: number = 1) {
     this.maxHealth = health;
@@ -50,91 +49,7 @@ export class Zombie {
     scene.add(this.mesh);
 
     // 创建血条
-    this.createHealthBar(scene);
-  }
-
-  /**
-   * 创建血条
-   */
-  private createHealthBar(scene: THREE.Scene) {
-    this.healthBar = new THREE.Group();
-
-    // 血条背景（稍大一些，形成边框效果）
-    const bgGeometry = new THREE.PlaneGeometry(7, 0.8);
-    const bgMaterial = new THREE.MeshBasicMaterial({
-      color: 0x222222,
-      transparent: true,
-      opacity: 0.8,
-    });
-    this.healthBarBg = new THREE.Mesh(bgGeometry, bgMaterial);
-
-    // 血条填充
-    const fillGeometry = new THREE.PlaneGeometry(6.5, 0.6);
-    const fillMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
-      transparent: true,
-      opacity: 0.9,
-    });
-    this.healthBarFill = new THREE.Mesh(fillGeometry, fillMaterial);
-
-    // 设置血条填充位置（居中）
-    this.healthBarFill.position.x = 0;
-
-    this.healthBar.add(this.healthBarBg);
-    this.healthBar.add(this.healthBarFill);
-
-    // 设置初始位置（在丧尸正上方）
-    this.healthBar.position.set(
-      this.position.x,
-      this.position.y + 6.5, // 精确调整到丧尸头顶上方
-      this.position.z
-    );
-
-    // 让血条始终面向摄像机
-    this.healthBar.lookAt(0, this.healthBar.position.y, 0);
-
-    scene.add(this.healthBar);
-  }
-
-  /**
-   * 更新血条显示
-   */
-  updateHealthBar() {
-    if (!this.healthBar) return;
-
-    // 更新位置
-    this.healthBar.position.set(
-      this.position.x,
-      this.position.y + 6.5, // 精确保持在丧尸头顶上方
-      this.position.z
-    );
-
-    if (!this.healthBarFill) return;
-
-    // 更新血量显示
-    const healthPercent = this.health / this.maxHealth;
-    this.healthBarFill.scale.x = healthPercent;
-
-    // 根据血量调整填充位置（左对齐）
-    this.healthBarFill.position.x = (healthPercent - 1) * 3.25;
-
-    // 根据血量改变颜色
-    if (healthPercent > 0.6) {
-      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(
-        0x00ff00
-      ); // 绿色
-    } else if (healthPercent > 0.3) {
-      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(
-        0xffaa00
-      ); // 橙色
-    } else {
-      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(
-        0xff0000
-      ); // 红色
-    }
-
-    // 始终面向摄像机
-    this.healthBar.lookAt(0, this.healthBar.position.y, 0);
+    this.healthBar = new HealthBar(this.mesh, health, 8, 1);
   }
 
   /**
@@ -142,7 +57,7 @@ export class Zombie {
    */
   takeDamage(damage: number): boolean {
     this.health -= damage;
-    this.updateHealthBar();
+    this.healthBar.setHealth(this.health);
 
     if (this.health <= 0) {
       return true; // 丧尸死亡
@@ -219,10 +134,14 @@ export class Zombie {
 
     this.mesh.position.copy(this.position);
 
-    // 更新血条位置
-    this.updateHealthBar();
-
     // Sprite 默认永远朝向摄像机，无需调用 lookAt
     // 只需要更新位置即可
+  }
+
+  /**
+   * 销毁丧尸及其血条
+   */
+  destroy() {
+    this.healthBar.destroy();
   }
 }
