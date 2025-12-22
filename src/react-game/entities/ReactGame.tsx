@@ -1,0 +1,380 @@
+import React, { useRef, useState, useMemo } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import { Player, type PlayerRef } from './Player';
+import { Zombie, type ZombieRef } from './Zombie';
+import { Bullet, type BulletRef, type BulletType } from './Bullet';
+import { useInput } from './useInput';
+import { CONFIG } from '../../game/core/config';
+
+// 简单的ID生成器
+let nextId = 0;
+const generateId = () => `entity_${nextId++}`;
+
+interface GameState {
+  health: number;
+  score: number;
+  weapon: string;
+  zombieCount: number;
+  gameOver: boolean;
+}
+
+export const ReactGame: React.FC = () => {
+  const [gameState, setGameState] = useState<GameState>({
+    health: 100,
+    score: 0,
+    weapon: 'pistol',
+    zombieCount: 0,
+    gameOver: false,
+  });
+
+  return (
+    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+      <Canvas
+        camera={{
+          position: [0, CONFIG.camHeight, CONFIG.camDist],
+          fov: 60,
+          up: [0, 0, -1],
+        }}
+        shadows
+        style={{ background: '#f4e8d0' }}
+        onCreated={({ scene }) => {
+          scene.fog = new THREE.Fog(0xf4e8d0, 60, 200);
+        }}
+      >
+        <GameContent onGameStateChange={setGameState} />
+      </Canvas>
+
+      <UIOverlay gameState={gameState} />
+
+      {gameState.gameOver && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            zIndex: 1000,
+          }}
+        >
+          <h1>GAME OVER</h1>
+          <h2>Score: {gameState.score}</h2>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '20px',
+              cursor: 'pointer',
+              background: '#ff0000',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+            }}
+          >
+            Restart
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface GameContentProps {
+  onGameStateChange: (state: GameState) => void;
+}
+
+const GameContent: React.FC<GameContentProps> = ({ onGameStateChange }) => {
+  const { scene, camera } = useThree();
+  const playerRef = useRef<PlayerRef>(null);
+  const getInput = useInput();
+
+  // Entities State
+  const [zombies, setZombies] = useState<
+    { id: string; initialPosition: [number, number, number]; health: number }[]
+  >([]);
+  const [bullets, setBullets] = useState<
+    {
+      id: string;
+      position: [number, number, number];
+      direction: [number, number, number];
+      type: BulletType;
+    }[]
+  >([]);
+
+  // Refs for entities to access in loop without dependency issues
+  const zombieRefs = useRef<Map<string, ZombieRef>>(new Map());
+  const bulletRefs = useRef<Map<string, BulletRef>>(new Map());
+
+  // Game Logic State
+  const scoreRef = useRef(0);
+  const healthRef = useRef(100);
+  const weaponRef = useRef({
+    type: 'pistol' as BulletType,
+    cooldown: 0,
+    timer: 0,
+  });
+  const spawnTimer = useRef(0);
+  const gameOverRef = useRef(false);
+
+  // Helper to add bullet
+  const addBullet = (
+    pos: THREE.Vector3,
+    dir: THREE.Vector3,
+    type: BulletType
+  ) => {
+    const id = generateId();
+    setBullets((prev) => [
+      ...prev,
+      {
+        id,
+        position: [pos.x, pos.y, pos.z],
+        direction: [dir.x, dir.y, dir.z],
+        type,
+      },
+    ]);
+  };
+
+  // Helper to remove bullet
+  const removeBullet = (id: string) => {
+    setBullets((prev) => prev.filter((b) => b.id !== id));
+    bulletRefs.current.delete(id);
+  };
+
+  // Helper to add zombie
+  const addZombie = () => {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 90 + Math.random() * 30;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    const id = generateId();
+    setZombies((prev) => [
+      ...prev,
+      {
+        id,
+        initialPosition: [x, 4, z],
+        health: 2, // Base health
+      },
+    ]);
+  };
+
+  // Helper to remove zombie
+  const removeZombie = (id: string) => {
+    setZombies((prev) => prev.filter((z) => z.id !== id));
+    zombieRefs.current.delete(id);
+  };
+
+  // Ground plane for raycasting
+  const groundPlane = useMemo(() => {
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    return plane;
+  }, []);
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+
+  useFrame((state) => {
+    if (gameOverRef.current) return;
+
+    const input = getInput();
+
+    // 1. Update Player
+    if (playerRef.current) {
+      // Calculate look target
+      let lookTarget: THREE.Vector3 | null = null;
+
+      // Raycast to ground
+      raycaster.setFromCamera(input.look, camera);
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, target)) {
+        lookTarget = target;
+      }
+
+      playerRef.current.update(input.move, lookTarget);
+
+      // Limit camera position
+      camera.position.x = playerRef.current.position.x;
+      camera.position.z = playerRef.current.position.z + CONFIG.camDist;
+      camera.lookAt(playerRef.current.position);
+
+      // 2. Weapon System
+      if (weaponRef.current.cooldown > 0) weaponRef.current.cooldown--;
+
+      if (input.fire && weaponRef.current.cooldown <= 0 && lookTarget) {
+        const aimDir = new THREE.Vector3().subVectors(
+          lookTarget,
+          playerRef.current.position
+        );
+        aimDir.y = 0;
+        aimDir.normalize();
+
+        const type = weaponRef.current.type;
+
+        if (type === 'shotgun') {
+          for (let i = -2; i <= 2; i++) {
+            const dir = aimDir.clone();
+            const angle = i * 0.15;
+            const x = dir.x * Math.cos(angle) - dir.z * Math.sin(angle);
+            const z = dir.x * Math.sin(angle) + dir.z * Math.cos(angle);
+            dir.set(x, 0, z);
+            addBullet(playerRef.current.position, dir, type);
+          }
+          weaponRef.current.cooldown = 45;
+        } else {
+          addBullet(playerRef.current.position, aimDir, type);
+          weaponRef.current.cooldown = type === 'machinegun' ? 4 : 15;
+        }
+      }
+    }
+
+    // 3. Update Bullets & Check Collisions
+    const activeZombies = Array.from(zombieRefs.current.values());
+
+    bulletRefs.current.forEach((bullet, id) => {
+      if (!bullet) return;
+      bullet.update();
+
+      if (!bullet.alive) {
+        removeBullet(id);
+        return;
+      }
+
+      // Check collision with zombies
+      for (const zombie of activeZombies) {
+        if (zombie.health <= 0) continue;
+
+        const dist = bullet.position.distanceTo(zombie.position);
+        if (dist < 2) {
+          // Hit radius
+          zombie.takeDamage(1);
+          bullet.alive = false; // Destroy bullet
+
+          if (zombie.health <= 0) {
+            scoreRef.current += 10;
+            removeZombie(zombie.id);
+          }
+          break; // Bullet hit one zombie
+        }
+      }
+    });
+
+    // 4. Update Zombies & Check Player Collision
+    if (playerRef.current) {
+      activeZombies.forEach((zombie) => {
+        // Apply behaviors
+        zombie.applyBehaviors(activeZombies, playerRef.current!.position);
+        zombie.update();
+
+        // Check collision with player
+        const dist = zombie.position.distanceTo(playerRef.current!.position);
+        if (dist < 2) {
+          // Player hit
+          // Implement invincible/damage logic here
+          // For simplicity:
+          healthRef.current -= 0.5; // Drain health fast
+          if (healthRef.current <= 0) {
+            healthRef.current = 0;
+            gameOverRef.current = true;
+          }
+        }
+      });
+    }
+
+    // 5. Spawning Logic
+    spawnTimer.current++;
+    if (spawnTimer.current > 100 && zombies.length < 20) {
+      // Simple spawn logic
+      addZombie();
+      spawnTimer.current = 0;
+    }
+
+    // 6. Sync UI State (throttle this if needed)
+    if (state.clock.getElapsedTime() % 0.5 < 0.02) {
+      // Sync every ~0.5s
+      onGameStateChange({
+        health: Math.floor(healthRef.current),
+        score: scoreRef.current,
+        weapon: weaponRef.current.type,
+        zombieCount: zombies.length,
+        gameOver: gameOverRef.current,
+      });
+    }
+  });
+
+  return (
+    <>
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[50, 100, 50]} intensity={0.6} castShadow />
+      <gridHelper args={[200, 50, 0x444444, 0x333333]} position={[0, 0, 0]} />
+
+      <Player ref={playerRef} position={[0, 1, 0]} />
+
+      {zombies.map((z) => (
+        <Zombie
+          key={z.id}
+          id={z.id}
+          ref={(ref) => {
+            if (ref) zombieRefs.current.set(z.id, ref);
+            else zombieRefs.current.delete(z.id);
+          }}
+          scene={scene}
+          initialPosition={z.initialPosition}
+          health={z.health}
+        />
+      ))}
+
+      {bullets.map((b) => (
+        <Bullet
+          key={b.id}
+          ref={(ref) => {
+            if (ref) bulletRefs.current.set(b.id, ref);
+            else bulletRefs.current.delete(b.id);
+          }}
+          initialPosition={b.position}
+          direction={b.direction}
+          type={b.type}
+        />
+      ))}
+    </>
+  );
+};
+
+const UIOverlay: React.FC<{ gameState: GameState }> = ({ gameState }) => {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        color: 'white',
+        fontSize: '16px',
+        zIndex: 100,
+        pointerEvents: 'none',
+        fontFamily: 'monospace',
+      }}
+    >
+      <div style={{ marginBottom: 10 }}>React-Three-Fiber Remake</div>
+      <div>
+        HP:{' '}
+        <span style={{ color: gameState.health > 30 ? '#0f0' : '#f00' }}>
+          {gameState.health}%
+        </span>
+      </div>
+      <div>Score: {gameState.score}</div>
+      <div>Weapon: {gameState.weapon}</div>
+      <div>Zombies: {gameState.zombieCount}</div>
+
+      {/* Simple Controls Info */}
+      <div style={{ marginTop: 20, fontSize: '12px', color: '#aaa' }}>
+        WASD to Move
+        <br />
+        Mouse to Aim & Shoot
+      </div>
+    </div>
+  );
+};
