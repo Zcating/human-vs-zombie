@@ -14,6 +14,8 @@ import { Loop } from './loop';
 import { state } from './state';
 import { Overlay } from '../scenes/overlay';
 import { CONFIG } from './config';
+import { LevelManager } from './level-manager';
+import { LevelState } from './level-manager';
 
 /**
  * 游戏主类
@@ -33,7 +35,8 @@ export class Game {
   zombiesSys = new ZombieSystem();
   itemsSys = new ItemSystem();
   collisions = new CollisionSystem();
-  ui = new UISystem();
+  ui: UISystem; // 改为属性声明
+  levelManager: LevelManager; // 关卡管理器
 
   loop: Loop;
   overlay: Overlay;
@@ -43,6 +46,8 @@ export class Game {
     this.renderer = new Renderer();
     this.player = new Player(this.renderer.scene);
     this.overlay = overlay;
+    this.levelManager = new LevelManager(); // 初始化关卡管理器
+    this.ui = new UISystem(this.levelManager); // 初始化UI系统并传入关卡管理器
     this.update = this.update.bind(this);
 
     // 启动主循环
@@ -58,6 +63,12 @@ export class Game {
     if (state.gameOver) {
       return;
     }
+
+    // 更新关卡状态
+    this.levelManager.update();
+
+    // 检查关卡完成状态
+    this.checkLevelStatus();
 
     // 0. 更新无敌状态
     this.updateInvincibleState(dt);
@@ -169,5 +180,41 @@ export class Game {
         state.invincibleTimer = CONFIG.invincibleTime;
       }
     }
+  }
+
+  /**
+   * 检查关卡状态
+   */
+  private checkLevelStatus(): void {
+    const levelInfo = this.levelManager.getCurrentLevelInfo();
+
+    // 更新全局状态
+    state.level.currentLevel = levelInfo.level;
+    state.level.levelCompleted = this.levelManager.isLevelCompleted();
+
+    // 如果关卡完成，显示完成界面
+    if (this.levelManager.isLevelCompleted()) {
+      const nextConfig = this.levelManager.getCurrentLevelInfo().config;
+      if (nextConfig) {
+        // 显示关卡完成界面
+        this.overlay.showLevelComplete(levelInfo.level, state.score, () => {
+          // 进入下一关
+          if (this.levelManager.nextLevel()) {
+            this.levelManager.startLevel();
+          } else {
+            // 所有关卡完成
+            state.level.allLevelsCompleted = true;
+            this.overlay.showGameComplete(state.score);
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * 开始游戏（包括第一关）
+   */
+  public startGame(): void {
+    this.levelManager.startLevel();
   }
 }

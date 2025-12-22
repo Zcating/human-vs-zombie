@@ -123,4 +123,51 @@ export class Overlay {
     this.actionBtn.innerText = 'TRY AGAIN';
     this.actionBtn.onclick = () => location.reload();
   }
+
+  /**
+   * 显示关卡完成界面
+   * @param level 关卡号
+   * @param score 当前得分
+   * @param onNext 下一关回调
+   */
+  showLevelComplete(level: number, score: number, onNext: () => void) {
+    this.container.style.display = 'block';
+    this.statusText.innerText = `关卡 ${level} 完成！`;
+    this.statusText.style.color = '#0f0';
+
+    // 显示得分
+    this.loadingTips.innerHTML = `当前得分: <span style="color:#fff; font-size:24px">${score}</span>`;
+
+    // 隐藏操作提示
+    this.pcTips.style.display = 'none';
+    this.mobileTips.style.display = 'none';
+
+    // 显示下一关按钮
+    this.actionBtn.innerText = '下一关';
+    this.actionBtn.onclick = () => {
+      this.hide();
+      onNext();
+    };
+  }
+
+  /**
+   * 显示游戏通关界面
+   * @param score 最终得分
+   */
+  showGameComplete(score: number) {
+    this.container.style.display = 'block';
+    this.statusText.innerText = '恭喜通关！';
+    this.statusText.style.color = '#ffd700';
+
+    // 显示最终得分
+    this.loadingTips.innerHTML = `最终得分: <span style="color:#fff; font-size:24px">${score}</span><br><span style="color:#ffd700">你已完成所有关卡！</span>`;
+
+    // 隐藏操作提示
+    this.pcTips.style.display = 'none';
+    this.mobileTips.style.display = 'none';
+
+    // 显示重新开始按钮
+    this.actionBtn.innerText = '重新开始';
+    this.actionBtn.onclick = () => location.reload();
+  }
 }

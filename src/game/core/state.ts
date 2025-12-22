@@ -19,6 +19,12 @@ export const state = {
     cooldown: 0, // 射击冷却计时（帧）
     maxCooldown: 15, // 当前武器的最大冷却时间
   },
+  // 关卡系统相关
+  level: {
+    currentLevel: 1,
+    levelCompleted: false,
+    allLevelsCompleted: false,
+  },
 };
 
 /**
@@ -36,4 +42,7 @@ export function resetState() {
   state.weapon.timer = 0;
   state.weapon.cooldown = 0;
   state.weapon.maxCooldown = 15;
+  state.level.currentLevel = 1;
+  state.level.levelCompleted = false;
+  state.level.allLevelsCompleted = false;
 }

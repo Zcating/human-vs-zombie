@@ -17,5 +17,7 @@ overlay.onStart = () => {
   // 隐藏 Overlay 界面
   overlay.hide();
   // 实例化并启动游戏主逻辑
-  new Game(overlay);
+  const game = new Game(overlay);
+  // 开始第一关
+  game.startGame();
 };

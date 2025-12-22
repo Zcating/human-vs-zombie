@@ -1,8 +1,9 @@
 import { state } from '../core/state';
+import { LevelManager } from '../core/level-manager';
 
 /**
  * UI 系统
- * 负责同步游戏状态（HP、分数、武器）到 DOM 界面
+ * 负责同步游戏状态（HP、分数、武器、关卡）到 DOM 界面
  */
 export class UISystem {
   // UI 元素引用
@@ -11,6 +12,10 @@ export class UISystem {
   weaponNameEl = document.getElementById(
     'weaponName'
   ) as HTMLSpanElement | null;
+  levelEl = document.getElementById('level') as HTMLSpanElement | null;
+  levelTimerEl = document.getElementById('levelTimer') as HTMLSpanElement | null;
+
+  constructor(private levelManager?: LevelManager) {}
 
   /**
    * 每一帧调用，刷新 UI 显示
@@ -48,5 +53,21 @@ export class UISystem {
 
     // 3. 更新分数
     if (this.scoreEl) this.scoreEl.innerText = String(state.score);
+
+    // 4. 更新关卡信息
+    if (this.levelEl) {
+      this.levelEl.innerText = `关卡 ${state.level.currentLevel}`;
+    }
+
+    // 5. 更新关卡倒计时
+    if (this.levelTimerEl && this.levelManager) {
+      const remainingTime = this.levelManager.getRemainingTime();
+      if (remainingTime > 0) {
+        this.levelTimerEl.innerText = `剩余时间: ${Math.ceil(remainingTime)}s`;
+        this.levelTimerEl.style.color = remainingTime < 10 ? 'red' : '#fff';
+      } else {
+        this.levelTimerEl.innerText = '';
+      }
+    }
   }
 }
