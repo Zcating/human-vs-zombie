@@ -8,15 +8,23 @@ const texture = loader.load(enemyImg);
 
 /**
  * 丧尸实体类
- * 具有自主移动行为（追踪与分离）
+ * 具有自主移动行为（追踪与分离）和血量系统
  */
 export class Zombie {
   position = new THREE.Vector3();
   velocity = new THREE.Vector3();
   acceleration = new THREE.Vector3();
   mesh: THREE.Sprite; // 使用 Sprite 替代 Mesh
+  health: number; // 当前血量
+  maxHealth: number; // 最大血量
+  healthBar: THREE.Group; // 血条组
+  healthBarBg: THREE.Mesh; // 血条背景
+  healthBarFill: THREE.Mesh; // 血条填充
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, health: number = 1) {
+    this.maxHealth = health;
+    this.health = health;
+
     // 随机生成位置（圆形分布）
     const angle = Math.random() * Math.PI * 2;
     const radius = 90 + Math.random() * 30;
@@ -40,6 +48,76 @@ export class Zombie {
 
     this.mesh.position.copy(this.position);
     scene.add(this.mesh);
+
+    // 创建血条
+    this.createHealthBar(scene);
+  }
+
+  /**
+   * 创建血条
+   */
+  private createHealthBar(scene: THREE.Scene) {
+    this.healthBar = new THREE.Group();
+    
+    // 血条背景
+    const bgGeometry = new THREE.PlaneGeometry(6, 0.5);
+    const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+    this.healthBarBg = new THREE.Mesh(bgGeometry, bgMaterial);
+    
+    // 血条填充
+    const fillGeometry = new THREE.PlaneGeometry(6, 0.5);
+    const fillMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    this.healthBarFill = new THREE.Mesh(fillGeometry, fillMaterial);
+    
+    this.healthBar.add(this.healthBarBg);
+    this.healthBar.add(this.healthBarFill);
+    
+    // 设置初始位置（在丧尸上方）
+    this.healthBar.position.set(this.position.x, this.position.y + 5, this.position.z);
+    
+    // 让血条始终面向摄像机
+    this.healthBar.lookAt(0, this.healthBar.position.y, 0);
+    
+    scene.add(this.healthBar);
+  }
+
+  /**
+   * 更新血条显示
+   */
+  updateHealthBar() {
+    if (!this.healthBar) return;
+    
+    // 更新位置
+    this.healthBar.position.set(this.position.x, this.position.y + 5, this.position.z);
+    
+    // 更新血量显示
+    const healthPercent = this.health / this.maxHealth;
+    this.healthBarFill.scale.x = healthPercent;
+    
+    // 根据血量改变颜色
+    if (healthPercent > 0.6) {
+      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(0x00ff00); // 绿色
+    } else if (healthPercent > 0.3) {
+      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(0xffaa00); // 橙色
+    } else {
+      (this.healthBarFill.material as THREE.MeshBasicMaterial).color.setHex(0xff0000); // 红色
+    }
+    
+    // 始终面向摄像机
+    this.healthBar.lookAt(0, this.healthBar.position.y, 0);
+  }
+
+  /**
+   * 受到伤害
+   */
+  takeDamage(damage: number): boolean {
+    this.health -= damage;
+    this.updateHealthBar();
+    
+    if (this.health <= 0) {
+      return true; // 丧尸死亡
+    }
+    return false; // 丧尸存活
   }
 
   /**
@@ -110,6 +188,9 @@ export class Zombie {
     this.acceleration.set(0, 0, 0); // 重置加速度
 
     this.mesh.position.copy(this.position);
+
+    // 更新血条位置
+    this.updateHealthBar();
 
     // Sprite 默认永远朝向摄像机，无需调用 lookAt
     // 只需要更新位置即可

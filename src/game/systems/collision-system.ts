@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 /**
  * 碰撞系统
- * 处理子弹与丧尸的碰撞检测
+ * 处理子弹与丧尸的碰撞检测，支持血条系统
  */
 export class CollisionSystem {
   /**
@@ -30,17 +30,22 @@ export class CollisionSystem {
         const z = zombies[j];
         // 简单距离判定 (< 2.0)
         if (b.position.distanceTo(z.position) < 2.0) {
-          // 移除丧尸
-          scene.remove(z.mesh);
-          zombies.splice(j, 1);
-
+          // 对丧尸造成伤害
+          const zombieDead = z.takeDamage(1); // 子弹造成1点伤害
+          
           // 移除子弹
           scene.remove(b.mesh);
           bullets.splice(i, 1);
           b.alive = false;
 
-          // 增加得分
-          state.score += 10;
+          // 如果丧尸死亡，增加得分并移除
+          if (zombieDead) {
+            scene.remove(z.mesh);
+            scene.remove(z.healthBar); // 移除血条
+            zombies.splice(j, 1);
+            state.score += 10;
+          }
+          
           break; // 子弹击中一个目标后销毁
         }
       }

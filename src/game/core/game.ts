@@ -200,6 +200,9 @@ export class Game {
         this.overlay.showLevelComplete(levelInfo.level, state.score, () => {
           // 进入下一关
           if (this.levelManager.nextLevel()) {
+            // 应用新的丧尸血量配置
+            const zombieHealth = this.levelManager.getCurrentZombieHealth();
+            this.zombiesSys.setZombieHealth(zombieHealth);
             this.levelManager.startLevel();
           } else {
             // 所有关卡完成
@@ -215,6 +218,9 @@ export class Game {
    * 开始游戏（包括第一关）
    */
   public startGame(): void {
+    // 应用丧尸血量配置
+    const zombieHealth = this.levelManager.getCurrentZombieHealth();
+    this.zombiesSys.setZombieHealth(zombieHealth);
     this.levelManager.startLevel();
   }
 }

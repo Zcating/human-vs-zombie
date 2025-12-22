@@ -9,6 +9,14 @@ import { Zombie } from '../entities/zombie';
 export class ZombieSystem {
   frame = 0;
   spawnRate = CONFIG.spawnRate;
+  zombieHealth = 1; // 默认丧尸血量
+
+  /**
+   * 设置丧尸血量（从关卡配置）
+   */
+  setZombieHealth(health: number) {
+    this.zombieHealth = health;
+  }
 
   /**
    * 每一帧更新丧尸状态
@@ -20,7 +28,7 @@ export class ZombieSystem {
     if (this.frame % this.spawnRate === 0) {
       // 检查是否达到最大数量限制
       if (zombies.length < CONFIG.maxZombies) {
-        zombies.push(new Zombie(scene));
+        zombies.push(new Zombie(scene, this.zombieHealth));
       }
       // 随着时间推移，加快生成速度（增加难度）
       if (this.spawnRate > 10 && this.frame % 600 === 0) this.spawnRate -= 5;

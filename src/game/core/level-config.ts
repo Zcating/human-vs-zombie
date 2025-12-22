@@ -12,6 +12,7 @@ export interface LevelConfig {
   zombieSpawnRate: number; // 生成帧间隔
   maxZombies: number;
   zombieSpeedMultiplier: number; // 速度倍率
+  zombieHealth: number; // 丧尸血量
 
   // 道具生成配置
   itemSpawnRate: number; // 生成帧间隔
@@ -28,52 +29,56 @@ export interface LevelConfig {
 export const LEVELS: LevelConfig[] = [
   {
     id: 1,
-    name: "新手训练",
-    description: "在60秒内生存下来",
+    name: '新手训练',
+    description: '在60秒内生存下来',
     duration: 60,
     zombieSpawnRate: 120, // 每120帧生成一只
     maxZombies: 5,
     zombieSpeedMultiplier: 0.8,
+    zombieHealth: 10, // 1点血量
     itemSpawnRate: 300,
     completionBonus: 100,
-    timeBonusMultiplier: 2
+    timeBonusMultiplier: 2,
   },
   {
     id: 2,
-    name: "街头求生",
-    description: "在60秒内面对更多丧尸",
+    name: '街头求生',
+    description: '在60秒内面对更多丧尸',
     duration: 60,
     zombieSpawnRate: 90, // 每90帧生成一只
     maxZombies: 8,
     zombieSpeedMultiplier: 1.0,
+    zombieHealth: 20, // 2点血量
     itemSpawnRate: 250,
     completionBonus: 200,
-    timeBonusMultiplier: 1.5
+    timeBonusMultiplier: 1.5,
   },
   {
     id: 3,
-    name: "末日降临",
-    description: "在60秒内面对丧尸潮",
+    name: '末日降临',
+    description: '在60秒内面对丧尸潮',
     duration: 60,
     zombieSpawnRate: 60, // 每60帧生成一只
     maxZombies: 12,
     zombieSpeedMultiplier: 1.2,
+    zombieHealth: 30, // 3点血量
     itemSpawnRate: 200,
     completionBonus: 300,
-    timeBonusMultiplier: 1.2
+    timeBonusMultiplier: 1.2,
   },
   {
     id: 4,
-    name: "无尽噩梦",
-    description: "在60秒内面对最强丧尸群",
+    name: '无尽噩梦',
+    description: '在60秒内面对最强丧尸群',
     duration: 60,
     zombieSpawnRate: 45, // 每45帧生成一只
     maxZombies: 15,
     zombieSpeedMultiplier: 1.5,
+    zombieHealth: 50, // 5点血量
     itemSpawnRate: 150,
     completionBonus: 500,
-    timeBonusMultiplier: 1.0
-  }
+    timeBonusMultiplier: 1.0,
+  },
 ];
 
 /**

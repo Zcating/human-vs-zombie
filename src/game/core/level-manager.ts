@@ -181,6 +181,13 @@ export class LevelManager {
   }
 
   /**
+   * 获取当前丧尸血量配置
+   */
+  getCurrentZombieHealth(): number {
+    return this.currentConfig?.zombieHealth || 1;
+  }
+
+  /**
    * 获取剩余时间（秒）
    */
   getRemainingTime(): number {
