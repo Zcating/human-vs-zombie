@@ -15,7 +15,6 @@ import { state } from './state';
 import { Overlay } from '../scenes/overlay';
 import { CONFIG } from './config';
 import { LevelManager } from './level-manager';
-import { LevelState } from './level-manager';
 
 /**
  * 游戏主类
