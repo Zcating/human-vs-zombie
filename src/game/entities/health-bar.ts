@@ -34,7 +34,7 @@ export class HealthBar {
     // 创建 Canvas 元素
     this.canvas = document.createElement('canvas');
     this.canvas.width = 256; // 高分辨率以获得更好的质量
-    this.canvas.height = 32;
+    this.canvas.height = 256;
     this.context = this.canvas.getContext('2d')!;
 
     // 创建 Canvas 纹理
@@ -50,7 +50,6 @@ export class HealthBar {
     });
 
     this.sprite = new THREE.Sprite(material);
-    this.sprite.scale.set(0.8, 0.1, 1);
 
     mesh.add(this.sprite);
 
@@ -65,17 +64,18 @@ export class HealthBar {
     const ctx = this.context;
     const canvas = this.canvas;
     const healthPercent = this.currentHealth / this.maxHealth;
-
+    const y = this.canvas.height - 24;
+    const height = 24;
     // 清空画布
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, y, canvas.width, height);
 
     // 绘制背景边框
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, y, canvas.width, height);
 
     // 绘制内部背景
     ctx.fillStyle = '#333333';
-    ctx.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
+    ctx.fillRect(2, 2 + y, canvas.width - 4, height - 4);
 
     // 计算填充宽度
     const fillWidth = (canvas.width - 4) * healthPercent;
@@ -85,12 +85,12 @@ export class HealthBar {
     if (healthPercent <= 0.3) {
       fillColor = '#ff0000'; // 红色
     } else if (healthPercent <= 0.6) {
-      fillColor = '#ffaa00'; // 橙色
+      fillColor = '#ffaa00'; // 橙色s
     }
 
     // 绘制血条填充
     ctx.fillStyle = fillColor;
-    ctx.fillRect(2, 2, fillWidth, canvas.height - 4);
+    ctx.fillRect(2, 2 + y, fillWidth, height - 4);
 
     // 更新纹理
     this.texture.needsUpdate = true;
