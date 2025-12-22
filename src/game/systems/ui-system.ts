@@ -1,9 +1,10 @@
 import { state } from '../core/state';
 import { LevelManager } from '../core/level-manager';
+import { InvincibleSystem } from './invincible-system';
 
 /**
  * UI 系统
- * 负责同步游戏状态（HP、分数、武器、关卡）到 DOM 界面
+ * 负责同步游戏状态（HP、分数、武器、关卡、无敌状态）到 DOM 界面
  */
 export class UISystem {
   // UI 元素引用
@@ -13,9 +14,19 @@ export class UISystem {
     'weaponName'
   ) as HTMLSpanElement | null;
   levelEl = document.getElementById('level') as HTMLSpanElement | null;
-  levelTimerEl = document.getElementById('levelTimer') as HTMLSpanElement | null;
+  levelTimerEl = document.getElementById(
+    'levelTimer'
+  ) as HTMLSpanElement | null;
+  invincibleEl = document.getElementById(
+    'invincible'
+  ) as HTMLSpanElement | null;
 
-  constructor(private levelManager?: LevelManager) {}
+  constructor(
+    private levelManager?: LevelManager,
+    private invincibleSystem?: InvincibleSystem
+  ) {
+    //
+  }
 
   /**
    * 每一帧调用，刷新 UI 显示
@@ -67,6 +78,18 @@ export class UISystem {
         this.levelTimerEl.style.color = remainingTime < 10 ? 'red' : '#fff';
       } else {
         this.levelTimerEl.innerText = '';
+      }
+    }
+
+    // 6. 更新无敌状态
+    if (this.invincibleEl && this.invincibleSystem) {
+      const invincibleText = this.invincibleSystem.getDisplayText();
+      if (invincibleText) {
+        this.invincibleEl.innerText = invincibleText;
+        this.invincibleEl.style.color = this.invincibleSystem.getDisplayColor();
+        this.invincibleEl.style.display = 'block';
+      } else {
+        this.invincibleEl.style.display = 'none';
       }
     }
   }

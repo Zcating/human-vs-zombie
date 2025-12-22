@@ -116,7 +116,10 @@ export class Zombie {
     const seek = this.seek(playerPos);
 
     // 加权合并行为力
-    separate.multiplyScalar(2.5); // 分离权重更高，避免穿模
+    // 分离权重更高，避免穿模
+    separate.multiplyScalar(2.5);
+
+    // 追踪权重较低，避免过于集中
     seek.multiplyScalar(1.0);
 
     this.acceleration.add(separate);
@@ -133,9 +136,6 @@ export class Zombie {
     this.acceleration.set(0, 0, 0); // 重置加速度
 
     this.mesh.position.copy(this.position);
-
-    // Sprite 默认永远朝向摄像机，无需调用 lookAt
-    // 只需要更新位置即可
   }
 
   /**

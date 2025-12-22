@@ -64,7 +64,7 @@ export class Player {
     const targetCamPos = this.mesh.position
       .clone()
       .add(new THREE.Vector3(0, CONFIG.camHeight, CONFIG.camDist));
-    camera.position.lerp(targetCamPos, 0.15);
+    camera.position.lerp(targetCamPos, 1);
     camera.lookAt(this.mesh.position);
   }
 }

@@ -10,6 +10,7 @@ import { ZombieSystem } from '../systems/zombie-system';
 import { ItemSystem } from '../systems/item-system';
 import { CollisionSystem } from '../systems/collision-system';
 import { UISystem } from '../systems/ui-system';
+import { InvincibleSystem } from '../systems/invincible-system';
 import { Loop } from './loop';
 import { state } from './state';
 import { Overlay } from '../scenes/overlay';
@@ -36,6 +37,7 @@ export class Game {
   collisions = new CollisionSystem();
   ui: UISystem; // 改为属性声明
   levelManager: LevelManager; // 关卡管理器
+  invincible: InvincibleSystem; // 无敌系统
 
   loop: Loop;
   overlay: Overlay;
@@ -46,7 +48,8 @@ export class Game {
     this.player = new Player(this.renderer.scene);
     this.overlay = overlay;
     this.levelManager = new LevelManager(); // 初始化关卡管理器
-    this.ui = new UISystem(this.levelManager); // 初始化UI系统并传入关卡管理器
+    this.invincible = new InvincibleSystem(); // 初始化无敌系统
+    this.ui = new UISystem(this.levelManager, this.invincible); // 初始化UI系统并传入关卡管理器和无敌系统
     this.update = this.update.bind(this);
 
     // 启动主循环
@@ -70,7 +73,8 @@ export class Game {
     this.checkLevelStatus();
 
     // 0. 更新无敌状态
-    this.updateInvincibleState(dt);
+    this.invincible.update(dt);
+    this.updatePlayerVisibility();
 
     // 1. 处理输入
     this.input.update();
@@ -89,6 +93,7 @@ export class Game {
       0,
       this.input.intents.move.z
     );
+
     this.player.update(move, look, this.renderer.camera);
 
     // 3. 计算瞄准方向
@@ -137,21 +142,11 @@ export class Game {
   }
 
   /**
-   * 更新无敌状态
-   * 处理倒计时和闪烁效果
+   * 更新玩家可见性（无敌闪烁效果）
    */
-  private updateInvincibleState(dt: number) {
-    if (state.invincible) {
-      state.invincibleTimer -= dt * 1000;
-      if (state.invincibleTimer <= 0) {
-        state.invincible = false;
-        state.invincibleTimer = 0;
-        this.player.mesh.visible = true; // 确保结束时可见
-      } else {
-        // 简单的闪烁效果：每 100ms 切换可见性
-        this.player.mesh.visible =
-          Math.floor(state.invincibleTimer / 100) % 2 === 0;
-      }
+  private updatePlayerVisibility(): void {
+    if (this.invincible.isInvincible()) {
+      this.player.mesh.visible = this.invincible.getVisibility();
     } else {
       this.player.mesh.visible = true;
     }
@@ -162,7 +157,7 @@ export class Game {
    * 处理伤害扣除和无敌状态触发
    */
   private checkPlayerZombieCollisions() {
-    if (state.invincible) return;
+    if (this.invincible.isInvincible()) return;
 
     const hit = this.zombies.some(
       (z) => z.position.distanceTo(this.player.mesh.position) < 2
@@ -175,8 +170,7 @@ export class Game {
         this.overlay.showGameOver(state.score);
       } else {
         // 触发无敌状态
-        state.invincible = true;
-        state.invincibleTimer = CONFIG.invincibleTime;
+        this.invincible.activateInvincible(CONFIG.invincibleTime);
       }
     }
   }
