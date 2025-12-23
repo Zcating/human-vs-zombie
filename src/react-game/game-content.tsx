@@ -55,6 +55,13 @@ export const GameContent: React.FC<GameContentProps> = ({
       if (healthRef.current <= 0) {
         healthRef.current = 0;
         gameOverRef.current = true;
+        onGameStateChange({
+          health: Math.floor(healthRef.current),
+          score: scoreRef.current,
+          weapon: weaponType,
+          zombieCount: zombies.length,
+          gameOver: gameOverRef.current,
+        });
       }
     });
 
