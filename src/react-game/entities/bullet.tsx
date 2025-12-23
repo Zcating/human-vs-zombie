@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
 import { useConstant } from '../hooks';
 
-export type BulletType = 'pistol' | 'machinegun' | 'shotgun';
+export type WeaponType = 'pistol' | 'machinegun' | 'shotgun';
 
 export interface BulletRef {
   readonly mesh: THREE.Mesh | null;
@@ -17,10 +17,10 @@ export interface BulletRef {
 interface BulletProps {
   initialPosition: [number, number, number];
   direction: [number, number, number];
-  type: BulletType;
+  type: WeaponType;
 }
 
-const BULLET_CONFIGS: Record<BulletType, { color: number; size: number }> = {
+const BULLET_CONFIGS: Record<WeaponType, { color: number; size: number }> = {
   pistol: { color: 0x000000, size: 0.5 },
   machinegun: { color: 0x00d2ff, size: 0.5 },
   shotgun: { color: 0xffaa00, size: 0.9 },

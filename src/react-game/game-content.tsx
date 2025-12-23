@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
 import { Player, type PlayerRef } from './entities/player';
 import { Zombie } from './entities/zombie';
 import { Bullet } from './entities/bullet';
@@ -9,9 +8,7 @@ import { useBulletSystem } from './systems/use-bullet-system';
 import { useZombieSystem } from './systems/use-zombie-system';
 import { useWeaponSystem } from './systems/use-weapon-system';
 import { useGameLogicSystem } from './systems/use-game-logic-system';
-import { CONFIG } from '../game/core/config';
 import { type GameState } from './types';
-import { useConstant, useConstructor } from './hooks';
 
 interface GameContentProps {
   onGameStateChange: (state: GameState) => void;
@@ -20,25 +17,14 @@ interface GameContentProps {
 export const GameContent: React.FC<GameContentProps> = ({
   onGameStateChange,
 }) => {
-  const { scene, camera } = useThree();
+  const { camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
-  // Ground plane for raycasting
-  const groundPlane = useConstant(() => {
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    return plane;
-  });
-  const raycaster = useConstructor(THREE.Raycaster);
 
   // Systems
-  const getInput = useInputSystem();
-  const {
-    bullets,
-    addBullet,
-    registerBullet,
-    update: updateBullets,
-  } = useBulletSystem();
+  const { updateCamera } = useInputSystem(camera);
+  const { weaponType, createBullets } = useWeaponSystem();
+  const { bullets, registerBullet, updateBullets } = useBulletSystem();
   const { zombies, registerZombie, update: updateZombies } = useZombieSystem();
-  const { weaponRef, update: updateWeapon } = useWeaponSystem();
   const { scoreRef, healthRef, gameOverRef } = useGameLogicSystem();
 
   useFrame((state) => {
@@ -50,32 +36,14 @@ export const GameContent: React.FC<GameContentProps> = ({
       return;
     }
 
-    const input = getInput();
-
-    // 1. Update Player
-
-    // Calculate look target
-    let lookTarget: THREE.Vector3 | null = null;
-
-    // Raycast to ground
-    raycaster.setFromCamera(input.look, camera);
-    const target = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(groundPlane, target)) {
-      lookTarget = target;
-    }
-
-    player.update(input.move, lookTarget);
-
-    // Limit camera position
-    camera.position.x = player.position.x;
-    camera.position.z = player.position.z + CONFIG.camDist;
-    camera.lookAt(player.position);
+    // 1. Update Player & Camera
+    const inputState = updateCamera(player);
 
     // 2. Weapon System
-    updateWeapon(input.fire, player.position, lookTarget, addBullet);
+    const bullets = createBullets(inputState);
 
     // 3. Update Bullets & Check Collisions
-    updateBullets();
+    updateBullets(bullets);
 
     // 4. Update Zombies & Check Player Collision
     updateZombies(player.position, () => {
@@ -97,7 +65,7 @@ export const GameContent: React.FC<GameContentProps> = ({
       onGameStateChange({
         health: Math.floor(healthRef.current),
         score: scoreRef.current,
-        weapon: weaponRef.current.type,
+        weapon: weaponType,
         zombieCount: zombies.length,
         gameOver: gameOverRef.current,
       });
@@ -112,13 +80,13 @@ export const GameContent: React.FC<GameContentProps> = ({
 
       <Player ref={playerRef} position={[0, 1, 0]} />
 
-      {zombies.map((zombie) => (
+      {zombies.map((z) => (
         <Zombie
-          key={zombie.id}
-          id={zombie.id}
-          ref={(ref) => registerZombie(zombie.id, ref)}
-          initialPosition={zombie.initialPosition}
-          health={zombie.health}
+          key={z.id}
+          id={z.id}
+          ref={(ref) => registerZombie(z.id, ref)}
+          initialPosition={z.initialPosition}
+          health={z.health}
         />
       ))}
 
