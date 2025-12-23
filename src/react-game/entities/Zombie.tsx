@@ -6,7 +6,7 @@ import React, {
 } from 'react';
 import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
-import { HealthBar, type HealthBarRef } from './HealthBar';
+import { HealthBar, type HealthBarRef } from './health-bar';
 
 export interface ZombieRef {
   id: string;
