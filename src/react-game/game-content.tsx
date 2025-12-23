@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Player, type PlayerRef } from './entities/player';
-import { Zombie, type ZombieRef } from './entities/zombie';
-import { Bullet, type BulletRef } from './entities/bullet';
+import { Zombie } from './entities/zombie';
+import { Bullet } from './entities/bullet';
 import { useInputSystem } from './systems/use-input-system';
 import { useBulletSystem } from './systems/use-bullet-system';
 import { useZombieSystem } from './systems/use-zombie-system';
@@ -31,19 +31,28 @@ export const GameContent: React.FC<GameContentProps> = ({
 
   // Systems
   const getInput = useInputSystem();
-  const { bullets, bulletRefs, addBullet, removeBullet, registerBullet } =
-    useBulletSystem();
-  const { zombies, zombieRefs, addZombie, removeZombie, registerZombie } =
-    useZombieSystem();
+  const {
+    bullets,
+    addBullet,
+    registerBullet,
+    update: updateBullets,
+  } = useBulletSystem();
+  const {
+    zombies,
+    zombieRefs,
+    removeZombie,
+    registerZombie,
+    update: updateZombies,
+  } = useZombieSystem();
   const { weaponRef, update: updateWeapon } = useWeaponSystem();
-  const { scoreRef, healthRef, spawnTimer, gameOverRef } = useGameLogicSystem();
+  const { scoreRef, healthRef, gameOverRef } = useGameLogicSystem();
 
   useFrame((state) => {
     if (gameOverRef.current) {
       return;
     }
-
-    if (!playerRef.current) {
+    const player = playerRef.current;
+    if (!player) {
       return;
     }
 
@@ -61,83 +70,36 @@ export const GameContent: React.FC<GameContentProps> = ({
       lookTarget = target;
     }
 
-    playerRef.current.update(input.move, lookTarget);
+    player.update(input.move, lookTarget);
 
     // Limit camera position
-    camera.position.x = playerRef.current.position.x;
-    camera.position.z = playerRef.current.position.z + CONFIG.camDist;
-    camera.lookAt(playerRef.current.position);
+    camera.position.x = player.position.x;
+    camera.position.z = player.position.z + CONFIG.camDist;
+    camera.lookAt(player.position);
 
     // 2. Weapon System
-    updateWeapon(input.fire, playerRef.current.position, lookTarget, addBullet);
+    updateWeapon(input.fire, player.position, lookTarget, addBullet);
 
     // 3. Update Bullets & Check Collisions
     const activeZombies = Array.from(zombieRefs.values());
-
-    bulletRefs.forEach((bullet: BulletRef, id: string) => {
-      if (!bullet) return;
-      bullet.update();
-
-      if (!bullet.alive) {
-        removeBullet(id);
-        return;
-      }
-
-      // Check collision with zombies
-      for (const zombie of activeZombies) {
-        if (zombie.health <= 0) {
-          continue;
-        }
-
-        const dist = bullet.position.distanceTo(zombie.position);
-        if (dist >= 2) {
-          continue;
-        }
-
-        // Hit radius
-        zombie.takeDamage(1);
-
-        // Destroy bullet
-        bullet.alive = false;
-
-        if (zombie.health <= 0) {
-          scoreRef.current += 10;
-          removeZombie(zombie.id);
-        }
-        // Bullet hit one zombie
-        break;
-      }
+    updateBullets(activeZombies, (zombieId) => {
+      scoreRef.current += 10;
+      removeZombie(zombieId);
     });
 
     // 4. Update Zombies & Check Player Collision
-    if (playerRef.current) {
-      activeZombies.forEach((zombie: ZombieRef) => {
-        // Apply behaviors
-        zombie.applyBehaviors(activeZombies, playerRef.current!.position);
-        zombie.update();
+    updateZombies(player.position, () => {
+      // Player hit
+      // Implement invincible/damage logic here
+      // For simplicity:
+      healthRef.current -= 0.5; // Drain health fast
+      if (healthRef.current <= 0) {
+        healthRef.current = 0;
+        gameOverRef.current = true;
+      }
+    });
 
-        // Check collision with player
-        const dist = zombie.position.distanceTo(playerRef.current!.position);
-        if (dist < 2) {
-          // Player hit
-          // Implement invincible/damage logic here
-          // For simplicity:
-          healthRef.current -= 0.5; // Drain health fast
-          if (healthRef.current <= 0) {
-            healthRef.current = 0;
-            gameOverRef.current = true;
-          }
-        }
-      });
-    }
-
-    // 5. Spawning Logic
-    spawnTimer.current++;
-    if (spawnTimer.current > 100 && zombies.length < 20) {
-      // Simple spawn logic
-      addZombie();
-      spawnTimer.current = 0;
-    }
+    // 5. Spawning Logic (moved to useZombieSystem)
 
     // 6. Sync UI State (throttle this if needed)
     if (state.clock.getElapsedTime() % 0.5 < 0.02) {

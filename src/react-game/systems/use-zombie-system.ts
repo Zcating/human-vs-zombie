@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import * as THREE from 'three';
 import { type ZombieRef } from '../entities/zombie';
 import { useConstructor } from '../hooks';
 
@@ -14,6 +15,7 @@ const generateId = () => `zombie_${nextId++}`;
 export const useZombieSystem = () => {
   const [zombies, setZombies] = useState<EntityState[]>([]);
   const zombieRefs = useConstructor<Map<string, ZombieRef>>(Map);
+  const spawnTimer = useRef(0);
 
   const addZombie = () => {
     const angle = Math.random() * Math.PI * 2;
@@ -45,11 +47,36 @@ export const useZombieSystem = () => {
     }
   };
 
+  const update = (playerPos: THREE.Vector3, onPlayerHit: () => void) => {
+    const activeZombies = Array.from(zombieRefs.values());
+
+    // Update Zombies & Check Player Collision
+    activeZombies.forEach((zombie: ZombieRef) => {
+      // Apply behaviors
+      zombie.applyBehaviors(activeZombies, playerPos);
+      zombie.update();
+
+      // Check collision with player
+      const dist = zombie.position.distanceTo(playerPos);
+      if (dist < 2) {
+        onPlayerHit();
+      }
+    });
+
+    // Spawning Logic
+    spawnTimer.current++;
+    if (spawnTimer.current > 100 && zombies.length < 20) {
+      addZombie();
+      spawnTimer.current = 0;
+    }
+  };
+
   return {
     zombies,
     zombieRefs,
     addZombie,
     removeZombie,
     registerZombie,
+    update,
   };
 };

@@ -39,14 +39,29 @@ export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
   const config = BULLET_CONFIGS[props.type] || BULLET_CONFIGS.pistol;
 
   useImperativeHandle(ref, () => ({
-    mesh: meshRef.current,
-    position: positionRef.current,
-    velocity: velocityRef.current,
+    get mesh() {
+      return meshRef.current;
+    },
+    get position() {
+      return positionRef.current;
+    },
+    get velocity() {
+      return velocityRef.current;
+    },
+    set velocity(value) {
+      velocityRef.current = value;
+    },
     get alive() {
       return aliveRef.current;
     },
+    set alive(value) {
+      aliveRef.current = value;
+    },
     get life() {
       return lifeRef.current;
+    },
+    set life(value) {
+      lifeRef.current = value;
     },
     update: () => {
       if (!aliveRef.current) return;

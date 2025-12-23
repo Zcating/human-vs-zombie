@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as THREE from 'three';
 import { type BulletRef, type BulletType } from '../entities/bullet';
+import { type ZombieRef } from '../entities/zombie';
 import { useConstructor } from '../hooks';
 
 export interface BulletState {
@@ -47,11 +48,48 @@ export const useBulletSystem = () => {
     }
   };
 
+  const update = (
+    activeZombies: ZombieRef[],
+    onZombieKilled: (zombieId: string) => void
+  ) => {
+    bulletRefs.forEach((bullet: BulletRef, id: string) => {
+      if (!bullet) {
+        return;
+      }
+      bullet.update();
+
+      if (!bullet.alive) {
+        removeBullet(id);
+        return;
+      }
+
+      // Check collision with zombies
+      for (const zombie of activeZombies) {
+        if (zombie.health <= 0) {
+          continue;
+        }
+
+        const dist = bullet.position.distanceTo(zombie.position);
+        if (dist < 2) {
+          // Hit radius
+          zombie.takeDamage(1);
+          bullet.alive = false; // Destroy bullet
+
+          if (zombie.health <= 0) {
+            onZombieKilled(zombie.id);
+          }
+          break; // Bullet hit one zombie
+        }
+      }
+    });
+  };
+
   return {
     bullets,
     bulletRefs,
     addBullet,
     removeBullet,
     registerBullet,
+    update,
   };
 };
