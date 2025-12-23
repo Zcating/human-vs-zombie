@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { type ZombieRef } from '../entities/zombie';
+import { useConstructor } from '../hooks';
 
 export interface EntityState {
   id: string;
@@ -12,7 +13,7 @@ const generateId = () => `zombie_${nextId++}`;
 
 export const useZombieSystem = () => {
   const [zombies, setZombies] = useState<EntityState[]>([]);
-  const zombieRefs = useRef<Map<string, ZombieRef>>(new Map());
+  const zombieRefs = useConstructor<Map<string, ZombieRef>>(Map);
 
   const addZombie = () => {
     const angle = Math.random() * Math.PI * 2;
@@ -33,7 +34,15 @@ export const useZombieSystem = () => {
 
   const removeZombie = (id: string) => {
     setZombies((prev) => prev.filter((z) => z.id !== id));
-    zombieRefs.current.delete(id);
+    zombieRefs.delete(id);
+  };
+
+  const registerZombie = (id: string, ref: ZombieRef | null) => {
+    if (ref) {
+      zombieRefs.set(id, ref);
+    } else {
+      zombieRefs.delete(id);
+    }
   };
 
   return {
@@ -41,5 +50,6 @@ export const useZombieSystem = () => {
     zombieRefs,
     addZombie,
     removeZombie,
+    registerZombie,
   };
 };

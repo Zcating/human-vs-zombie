@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Player, type PlayerRef } from './entities/player';
@@ -11,6 +11,7 @@ import { useWeaponSystem } from './systems/use-weapon-system';
 import { useGameLogicSystem } from './systems/use-game-logic-system';
 import { CONFIG } from '../game/core/config';
 import { type GameState } from './types';
+import { useConstant, useConstructor } from './hooks';
 
 interface GameContentProps {
   onGameStateChange: (state: GameState) => void;
@@ -21,26 +22,21 @@ export const GameContent: React.FC<GameContentProps> = ({
 }) => {
   const { scene, camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
+  // Ground plane for raycasting
+  const groundPlane = useConstant(() => {
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    return plane;
+  });
+  const raycaster = useConstructor(THREE.Raycaster);
 
   // Systems
   const getInput = useInputSystem();
-  const { bullets, bulletRefs, addBullet, removeBullet } = useBulletSystem();
-  const { zombies, zombieRefs, addZombie, removeZombie } = useZombieSystem();
+  const { bullets, bulletRefs, addBullet, removeBullet, registerBullet } =
+    useBulletSystem();
+  const { zombies, zombieRefs, addZombie, removeZombie, registerZombie } =
+    useZombieSystem();
   const { weaponRef, update: updateWeapon } = useWeaponSystem();
   const { scoreRef, healthRef, spawnTimer, gameOverRef } = useGameLogicSystem();
-
-  // Refs for entities to access in loop without dependency issues
-  // Note: These are now managed inside the custom hooks, but we need to access the map methods
-  // However, the current custom hooks implementation exposes refs that hold the maps.
-  // We need to be careful about how we access them.
-  // Actually, useBulletSystem and useZombieSystem return bulletRefs and zombieRefs which are RefObject<Map>
-
-  // Ground plane for raycasting
-  const groundPlane = useMemo(() => {
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    return plane;
-  }, []);
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
 
   useFrame((state) => {
     if (gameOverRef.current) {
@@ -76,7 +72,7 @@ export const GameContent: React.FC<GameContentProps> = ({
     updateWeapon(input.fire, playerRef.current.position, lookTarget, addBullet);
 
     // 3. Update Bullets & Check Collisions
-    const activeZombies = Array.from(zombieRefs.current.values());
+    const activeZombies = Array.from(zombieRefs.values());
 
     bulletRefs.forEach((bullet: BulletRef, id: string) => {
       if (!bullet) return;
@@ -168,10 +164,7 @@ export const GameContent: React.FC<GameContentProps> = ({
         <Zombie
           key={z.id}
           id={z.id}
-          ref={(ref) => {
-            if (ref) zombieRefs.current.set(z.id, ref);
-            else zombieRefs.current.delete(z.id);
-          }}
+          ref={(ref) => registerZombie(z.id, ref)}
           scene={scene}
           initialPosition={z.initialPosition}
           health={z.health}
@@ -181,13 +174,7 @@ export const GameContent: React.FC<GameContentProps> = ({
       {bullets.map((b) => (
         <Bullet
           key={b.id}
-          ref={(ref) => {
-            if (ref) {
-              bulletRefs.set(b.id, ref);
-            } else {
-              bulletRefs.delete(b.id);
-            }
-          }}
+          ref={(ref) => registerBullet(b.id, ref)}
           initialPosition={b.position}
           direction={b.direction}
           type={b.type}

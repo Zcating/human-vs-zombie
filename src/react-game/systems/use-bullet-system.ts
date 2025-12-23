@@ -39,10 +39,19 @@ export const useBulletSystem = () => {
     bulletRefs.delete(id);
   };
 
+  const registerBullet = (id: string, ref: BulletRef | null) => {
+    if (ref) {
+      bulletRefs.set(id, ref);
+    } else {
+      bulletRefs.delete(id);
+    }
+  };
+
   return {
     bullets,
     bulletRefs,
     addBullet,
     removeBullet,
+    registerBullet,
   };
 };
