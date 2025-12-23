@@ -30,7 +30,7 @@ export const useZombieSystem = () => {
       {
         id,
         initialPosition: [x, 4, z],
-        health: 2, // Base health
+        health: 10, // Base health
       },
     ]);
   };
@@ -100,8 +100,6 @@ export const useZombieSystem = () => {
   return {
     zombies,
     zombieRefs,
-    addZombie,
-    removeZombie,
     registerZombie,
     update,
   };

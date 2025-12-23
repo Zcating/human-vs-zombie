@@ -112,24 +112,23 @@ export const GameContent: React.FC<GameContentProps> = ({
 
       <Player ref={playerRef} position={[0, 1, 0]} />
 
-      {zombies.map((z) => (
+      {zombies.map((zombie) => (
         <Zombie
-          key={z.id}
-          id={z.id}
-          ref={(ref) => registerZombie(z.id, ref)}
-          scene={scene}
-          initialPosition={z.initialPosition}
-          health={z.health}
+          key={zombie.id}
+          id={zombie.id}
+          ref={(ref) => registerZombie(zombie.id, ref)}
+          initialPosition={zombie.initialPosition}
+          health={zombie.health}
         />
       ))}
 
-      {bullets.map((b) => (
+      {bullets.map((bullet) => (
         <Bullet
-          key={b.id}
-          ref={(ref) => registerBullet(b.id, ref)}
-          initialPosition={b.position}
-          direction={b.direction}
-          type={b.type}
+          key={bullet.id}
+          ref={(ref) => registerBullet(bullet.id, ref)}
+          initialPosition={bullet.position}
+          direction={bullet.direction}
+          type={bullet.type}
         />
       ))}
     </>
