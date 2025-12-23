@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Player, type PlayerRef } from './entities/player';
 import { Zombie, type ZombieRef } from './entities/zombie';
 import { Bullet, type BulletRef, type BulletType } from './entities/bullet';
-import { useInput } from './entities/use-input';
+import { useInputSystem } from './systems/use-input-system';
 import { CONFIG } from '../game/core/config';
 import { type GameState } from './types';
 import { useConstant } from './hooks';
@@ -35,7 +35,7 @@ export const GameContent: React.FC<GameContentProps> = ({
 }) => {
   const { scene, camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
-  const getInput = useInput();
+  const getInput = useInputSystem();
 
   // Entities State
   const [zombies, setZombies] = useState<EntityState[]>([]);

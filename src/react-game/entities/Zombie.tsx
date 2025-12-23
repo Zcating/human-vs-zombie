@@ -7,6 +7,11 @@ import React, {
 import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
 import { HealthBar, type HealthBarRef } from './health-bar';
+import enemyImg from '../../assets/enermy_attack.png';
+
+// 静态加载纹理
+const loader = new THREE.TextureLoader();
+const texture = loader.load(enemyImg);
 
 export interface ZombieRef {
   id: string;
@@ -46,18 +51,19 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
 
   // 创建丧尸纹理（如果没有提供）
   const createDefaultTexture = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d')!;
+    // const canvas = document.createElement('canvas');
+    // canvas.width = 64;
+    // canvas.height = 64;
+    // const ctx = canvas.getContext('2d')!;
 
-    // 绘制简单的丧尸形状
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(16, 16, 32, 32);
+    // // 绘制简单的丧尸形状
+    // ctx.fillStyle = '#ff0000';
+    // ctx.fillRect(0, 0, 64, 64);
+    // ctx.fillStyle = '#ffffff';
+    // ctx.fillRect(16, 16, 32, 32);
 
-    const texture = new THREE.CanvasTexture(canvas);
+    // const texture = new THREE.CanvasTexture(canvas);
+    // return texture;
     return texture;
   };
 

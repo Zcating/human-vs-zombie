@@ -9,7 +9,7 @@ export interface InputState {
   fire: boolean;
 }
 
-export const useInput = () => {
+export const useInputSystem = () => {
   const keysRef = useRef<Record<string, boolean>>({});
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const mouseDownRef = useRef(false);
