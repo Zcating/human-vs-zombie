@@ -1,9 +1,4 @@
-import React, {
-  useRef,
-  useImperativeHandle,
-  forwardRef,
-  useEffect,
-} from 'react';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
 import { HealthBar, type HealthBarRef } from './health-bar';
@@ -100,6 +95,7 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
       diff.normalize();
       // 距离越近排斥力越大
       diff.divideScalar(d);
+
       diffList.push(diff);
 
       return diffList;
@@ -153,17 +149,19 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
    * 更新物理状态
    */
   const update = () => {
-    if (!spriteRef.current) {
+    const sprite = spriteRef.current;
+    if (!sprite) {
       return;
     }
     // 更新速度和位置
     velocity.add(acceleration);
     velocity.clampLength(0, CONFIG.zombieSpeed);
+    // 重置加速度
+    acceleration.set(0, 0, 0);
     position.add(velocity);
-    acceleration.set(0, 0, 0); // 重置加速度
 
     // 更新网格位置
-    spriteRef.current.position.copy(position);
+    sprite.position.copy(position);
 
     // 触发位置变化回调
     if (props.onPositionChange) {
