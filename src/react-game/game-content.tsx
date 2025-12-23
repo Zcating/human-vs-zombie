@@ -31,6 +31,7 @@ export const GameContent: React.FC<GameContentProps> = ({
     if (gameOverRef.current) {
       return;
     }
+
     const player = playerRef.current;
     if (!player) {
       return;

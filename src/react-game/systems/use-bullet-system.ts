@@ -22,7 +22,9 @@ export const useBulletSystem = () => {
   };
 
   const updateBullets = (newBullets: BulletState[]) => {
-    setBullets((prev) => [...prev, ...newBullets]);
+    if (newBullets.length === 0) {
+      setBullets((prev) => [...prev, ...newBullets]);
+    }
 
     bulletRefs.forEach((bullet: BulletRef, id: string) => {
       if (!bullet) {
