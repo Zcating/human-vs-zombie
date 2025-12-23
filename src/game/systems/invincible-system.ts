@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { state } from '../core/state';
 import { CONFIG } from '../core/config';
 

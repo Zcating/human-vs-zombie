@@ -6,7 +6,7 @@ import React, {
 } from 'react';
 import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
-import { HealthBar } from '../../game/entities/health-bar';
+import { HealthBar, type HealthBarRef } from './HealthBar';
 
 export interface ZombieRef {
   id: string;
@@ -40,7 +40,7 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
   const positionRef = useRef(new THREE.Vector3());
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
-  const healthBarRef = useRef<HealthBar | null>(null);
+  const healthBarRef = useRef<HealthBarRef | null>(null);
   const currentHealthRef = useRef(props.health || 1);
   const maxHealthRef = useRef(props.health || 1);
 
@@ -78,26 +78,6 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
       positionRef.current.set(x, 4, z);
       spriteRef.current.position.copy(positionRef.current);
     }
-
-    // 创建血条
-    healthBarRef.current = new HealthBar(
-      props.scene,
-      maxHealthRef.current,
-      8,
-      1
-    );
-
-    // 设置血条初始位置
-    if (healthBarRef.current) {
-      healthBarRef.current.updatePosition(positionRef.current);
-    }
-
-    return () => {
-      // 清理资源
-      if (healthBarRef.current) {
-        healthBarRef.current.destroy();
-      }
-    };
   }, []);
 
   /**
@@ -189,11 +169,6 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
     // 更新网格位置
     spriteRef.current.position.copy(positionRef.current);
 
-    // 更新血条位置
-    if (healthBarRef.current) {
-      healthBarRef.current.updatePosition(positionRef.current);
-    }
-
     // 触发位置变化回调
     if (props.onPositionChange) {
       props.onPositionChange(positionRef.current);
@@ -204,9 +179,7 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
    * 销毁丧尸
    */
   const destroy = () => {
-    if (healthBarRef.current) {
-      healthBarRef.current.destroy();
-    }
+    // React handles unmount
   };
 
   // 暴露给父组件的接口
@@ -238,7 +211,16 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
       args={[SpriteMaterial]}
       scale={[8, 8, 1]}
       position={props.initialPosition || [0, 4, 0]}
-    />
+    >
+      <HealthBar
+        ref={healthBarRef}
+        maxHealth={maxHealthRef.current}
+        initialHealth={currentHealthRef.current}
+        width={1} // Relative to parent scale (8) -> 8 * 1 = 8
+        height={1 / 8} // Relative to parent scale (8) -> 8 * 1/8 = 1
+        position={[0, 0.6, 0]} // Above the zombie
+      />
+    </sprite>
   );
 });
 

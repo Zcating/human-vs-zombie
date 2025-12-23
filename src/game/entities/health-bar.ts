@@ -11,8 +11,8 @@ export class HealthBar {
   private texture: THREE.CanvasTexture;
   private maxHealth: number;
   private currentHealth: number;
-  private width: number;
-  private height: number;
+  // private width: number;
+  // private height: number;
 
   /**
    * @param mesh 父物体（用于添加血条精灵）
@@ -23,13 +23,13 @@ export class HealthBar {
   constructor(
     mesh: THREE.Object3D,
     maxHealth: number = 100,
-    width: number = 8,
-    height: number = 1
+    _width: number = 8,
+    _height: number = 1
   ) {
     this.maxHealth = maxHealth;
     this.currentHealth = maxHealth;
-    this.width = width;
-    this.height = height;
+    // this.width = width;
+    // this.height = height;
 
     // 创建 Canvas 元素
     this.canvas = document.createElement('canvas');
