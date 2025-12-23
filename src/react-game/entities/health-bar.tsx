@@ -2,7 +2,6 @@ import React, {
   useRef,
   useImperativeHandle,
   forwardRef,
-  useMemo,
   useEffect,
 } from 'react';
 import * as THREE from 'three';
@@ -14,39 +13,30 @@ export interface HealthBarRef {
 
 interface HealthBarProps {
   maxHealth?: number;
-  width?: number;
-  height?: number;
   initialHealth?: number;
-  position?: [number, number, number];
 }
 
 export const HealthBar = forwardRef<HealthBarRef, HealthBarProps>(
-  (
-    {
-      maxHealth = 100,
-      width = 8,
-      height = 1,
-      initialHealth = 100,
-      position = [0, 0, 0],
-    },
-    ref
-  ) => {
+  ({ maxHealth = 100, initialHealth = 100 }, ref) => {
+    const width = useConstant(() => 1);
+    const height = useConstant(() => 1);
+    const position = useConstant(() => [0, 0, 0] as const);
+
     const textureRef = useRef<THREE.CanvasTexture>(null!);
-    const barCanvas = useConstant<HTMLCanvasElement>(() =>
-      document.createElement('canvas')
-    );
     const currentHealthRef = useRef(initialHealth);
 
-    // Initialize canvas
-    useMemo(() => {
-      const canvas = barCanvas;
+    const barCanvas = useConstant<HTMLCanvasElement>(() => {
+      const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
-    }, []);
+      return canvas;
+    });
 
     const draw = (health: number) => {
       const ctx = barCanvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        return;
+      }
 
       const healthPercent = health / maxHealth;
       const barHeight = 24;

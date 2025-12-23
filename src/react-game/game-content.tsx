@@ -1,33 +1,19 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Player, type PlayerRef } from './entities/player';
 import { Zombie, type ZombieRef } from './entities/zombie';
-import { Bullet, type BulletRef, type BulletType } from './entities/bullet';
+import { Bullet, type BulletRef } from './entities/bullet';
 import { useInputSystem } from './systems/use-input-system';
+import { useBulletSystem } from './systems/use-bullet-system';
+import { useZombieSystem } from './systems/use-zombie-system';
+import { useWeaponSystem } from './systems/use-weapon-system';
+import { useGameLogicSystem } from './systems/use-game-logic-system';
 import { CONFIG } from '../game/core/config';
 import { type GameState } from './types';
-import { useConstructor } from './hooks';
-
-// 简单的ID生成器
-let nextId = 0;
-const generateId = () => `entity_${nextId++}`;
 
 interface GameContentProps {
   onGameStateChange: (state: GameState) => void;
-}
-
-interface EntityState {
-  id: string;
-  initialPosition: [number, number, number];
-  health: number;
-}
-
-interface BulletState {
-  id: string;
-  position: [number, number, number];
-  direction: [number, number, number];
-  type: BulletType;
 }
 
 export const GameContent: React.FC<GameContentProps> = ({
@@ -36,74 +22,18 @@ export const GameContent: React.FC<GameContentProps> = ({
   const { scene, camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
 
+  // Systems
   const getInput = useInputSystem();
-
-  // Entities State
-  const [zombies, setZombies] = useState<EntityState[]>([]);
-  const [bullets, setBullets] = useState<BulletState[]>([]);
+  const { bullets, bulletRefs, addBullet, removeBullet } = useBulletSystem();
+  const { zombies, zombieRefs, addZombie, removeZombie } = useZombieSystem();
+  const { weaponRef, update: updateWeapon } = useWeaponSystem();
+  const { scoreRef, healthRef, spawnTimer, gameOverRef } = useGameLogicSystem();
 
   // Refs for entities to access in loop without dependency issues
-  const zombieRefs = useConstructor<Map<string, ZombieRef>>(Map);
-  const bulletRefs = useConstructor<Map<string, BulletRef>>(Map);
-
-  // Game Logic State
-  const scoreRef = useRef(0);
-  const healthRef = useRef(100);
-  const weaponRef = useRef({
-    type: 'pistol' as BulletType,
-    cooldown: 0,
-    timer: 0,
-  });
-  const spawnTimer = useRef(0);
-  const gameOverRef = useRef(false);
-
-  // Helper to add bullet
-  const addBullet = (
-    pos: THREE.Vector3,
-    dir: THREE.Vector3,
-    type: BulletType
-  ) => {
-    const id = generateId();
-    setBullets((prev) => [
-      ...prev,
-      {
-        id,
-        position: [pos.x, pos.y, pos.z],
-        direction: [dir.x, dir.y, dir.z],
-        type,
-      },
-    ]);
-  };
-
-  // Helper to remove bullet
-  const removeBullet = (id: string) => {
-    setBullets((prev) => prev.filter((b) => b.id !== id));
-    bulletRefs.delete(id);
-  };
-
-  // Helper to add zombie
-  const addZombie = () => {
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 90 + Math.random() * 30;
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-
-    const id = generateId();
-    setZombies((prev) => [
-      ...prev,
-      {
-        id,
-        initialPosition: [x, 4, z],
-        health: 2, // Base health
-      },
-    ]);
-  };
-
-  // Helper to remove zombie
-  const removeZombie = (id: string) => {
-    setZombies((prev) => prev.filter((z) => z.id !== id));
-    zombieRefs.delete(id);
-  };
+  // Note: These are now managed inside the custom hooks, but we need to access the map methods
+  // However, the current custom hooks implementation exposes refs that hold the maps.
+  // We need to be careful about how we access them.
+  // Actually, useBulletSystem and useZombieSystem return bulletRefs and zombieRefs which are RefObject<Map>
 
   // Ground plane for raycasting
   const groundPlane = useMemo(() => {
@@ -113,63 +43,42 @@ export const GameContent: React.FC<GameContentProps> = ({
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
 
   useFrame((state) => {
-    if (gameOverRef.current) return;
+    if (gameOverRef.current) {
+      return;
+    }
+
+    if (!playerRef.current) {
+      return;
+    }
 
     const input = getInput();
 
     // 1. Update Player
-    if (playerRef.current) {
-      // Calculate look target
-      let lookTarget: THREE.Vector3 | null = null;
 
-      // Raycast to ground
-      raycaster.setFromCamera(input.look, camera);
-      const target = new THREE.Vector3();
-      if (raycaster.ray.intersectPlane(groundPlane, target)) {
-        lookTarget = target;
-      }
+    // Calculate look target
+    let lookTarget: THREE.Vector3 | null = null;
 
-      playerRef.current.update(input.move, lookTarget);
-
-      // Limit camera position
-      camera.position.x = playerRef.current.position.x;
-      camera.position.z = playerRef.current.position.z + CONFIG.camDist;
-      camera.lookAt(playerRef.current.position);
-
-      // 2. Weapon System
-      if (weaponRef.current.cooldown > 0) weaponRef.current.cooldown--;
-
-      if (input.fire && weaponRef.current.cooldown <= 0 && lookTarget) {
-        const aimDir = new THREE.Vector3().subVectors(
-          lookTarget,
-          playerRef.current.position
-        );
-        aimDir.y = 0;
-        aimDir.normalize();
-
-        const type = weaponRef.current.type;
-
-        if (type === 'shotgun') {
-          for (let i = -2; i <= 2; i++) {
-            const dir = aimDir.clone();
-            const angle = i * 0.15;
-            const x = dir.x * Math.cos(angle) - dir.z * Math.sin(angle);
-            const z = dir.x * Math.sin(angle) + dir.z * Math.cos(angle);
-            dir.set(x, 0, z);
-            addBullet(playerRef.current.position, dir, type);
-          }
-          weaponRef.current.cooldown = 45;
-        } else {
-          addBullet(playerRef.current.position, aimDir, type);
-          weaponRef.current.cooldown = type === 'machinegun' ? 4 : 15;
-        }
-      }
+    // Raycast to ground
+    raycaster.setFromCamera(input.look, camera);
+    const target = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, target)) {
+      lookTarget = target;
     }
 
-    // 3. Update Bullets & Check Collisions
-    const activeZombies = Array.from(zombieRefs.values());
+    playerRef.current.update(input.move, lookTarget);
 
-    bulletRefs.forEach((bullet, id) => {
+    // Limit camera position
+    camera.position.x = playerRef.current.position.x;
+    camera.position.z = playerRef.current.position.z + CONFIG.camDist;
+    camera.lookAt(playerRef.current.position);
+
+    // 2. Weapon System
+    updateWeapon(input.fire, playerRef.current.position, lookTarget, addBullet);
+
+    // 3. Update Bullets & Check Collisions
+    const activeZombies = Array.from(zombieRefs.current.values());
+
+    bulletRefs.forEach((bullet: BulletRef, id: string) => {
       if (!bullet) return;
       bullet.update();
 
@@ -180,26 +89,33 @@ export const GameContent: React.FC<GameContentProps> = ({
 
       // Check collision with zombies
       for (const zombie of activeZombies) {
-        if (zombie.health <= 0) continue;
+        if (zombie.health <= 0) {
+          continue;
+        }
 
         const dist = bullet.position.distanceTo(zombie.position);
-        if (dist < 2) {
-          // Hit radius
-          zombie.takeDamage(1);
-          bullet.alive = false; // Destroy bullet
-
-          if (zombie.health <= 0) {
-            scoreRef.current += 10;
-            removeZombie(zombie.id);
-          }
-          break; // Bullet hit one zombie
+        if (dist >= 2) {
+          continue;
         }
+
+        // Hit radius
+        zombie.takeDamage(1);
+
+        // Destroy bullet
+        bullet.alive = false;
+
+        if (zombie.health <= 0) {
+          scoreRef.current += 10;
+          removeZombie(zombie.id);
+        }
+        // Bullet hit one zombie
+        break;
       }
     });
 
     // 4. Update Zombies & Check Player Collision
     if (playerRef.current) {
-      activeZombies.forEach((zombie) => {
+      activeZombies.forEach((zombie: ZombieRef) => {
         // Apply behaviors
         zombie.applyBehaviors(activeZombies, playerRef.current!.position);
         zombie.update();
@@ -237,7 +153,6 @@ export const GameContent: React.FC<GameContentProps> = ({
         zombieCount: zombies.length,
         gameOver: gameOverRef.current,
       });
-      console.log(gameOverRef.current);
     }
   });
 
@@ -254,8 +169,8 @@ export const GameContent: React.FC<GameContentProps> = ({
           key={z.id}
           id={z.id}
           ref={(ref) => {
-            if (ref) zombieRefs.set(z.id, ref);
-            else zombieRefs.delete(z.id);
+            if (ref) zombieRefs.current.set(z.id, ref);
+            else zombieRefs.current.delete(z.id);
           }}
           scene={scene}
           initialPosition={z.initialPosition}
@@ -267,8 +182,11 @@ export const GameContent: React.FC<GameContentProps> = ({
         <Bullet
           key={b.id}
           ref={(ref) => {
-            if (ref) bulletRefs.set(b.id, ref);
-            else bulletRefs.delete(b.id);
+            if (ref) {
+              bulletRefs.set(b.id, ref);
+            } else {
+              bulletRefs.delete(b.id);
+            }
           }}
           initialPosition={b.position}
           direction={b.direction}
