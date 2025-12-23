@@ -7,7 +7,7 @@ import { Bullet, type BulletRef, type BulletType } from './entities/bullet';
 import { useInputSystem } from './systems/use-input-system';
 import { CONFIG } from '../game/core/config';
 import { type GameState } from './types';
-import { useConstant } from './hooks';
+import { useConstructor } from './hooks';
 
 // 简单的ID生成器
 let nextId = 0;
@@ -35,6 +35,7 @@ export const GameContent: React.FC<GameContentProps> = ({
 }) => {
   const { scene, camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
+
   const getInput = useInputSystem();
 
   // Entities State
@@ -42,8 +43,8 @@ export const GameContent: React.FC<GameContentProps> = ({
   const [bullets, setBullets] = useState<BulletState[]>([]);
 
   // Refs for entities to access in loop without dependency issues
-  const zombieRefs = useConstant<Map<string, ZombieRef>>(() => new Map());
-  const bulletRefs = useConstant<Map<string, BulletRef>>(() => new Map());
+  const zombieRefs = useConstructor<Map<string, ZombieRef>>(Map);
+  const bulletRefs = useConstructor<Map<string, BulletRef>>(Map);
 
   // Game Logic State
   const scoreRef = useRef(0);
@@ -236,6 +237,7 @@ export const GameContent: React.FC<GameContentProps> = ({
         zombieCount: zombies.length,
         gameOver: gameOverRef.current,
       });
+      console.log(gameOverRef.current);
     }
   });
 
