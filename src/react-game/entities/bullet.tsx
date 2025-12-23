@@ -1,15 +1,16 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import * as THREE from 'three';
 import { CONFIG } from '../../game/core/config';
+import { useConstant } from '../hooks';
 
 export type BulletType = 'pistol' | 'machinegun' | 'shotgun';
 
 export interface BulletRef {
-  mesh: THREE.Mesh;
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
-  alive: boolean;
+  readonly mesh: THREE.Mesh | null;
+  readonly position: THREE.Vector3;
+  readonly velocity: THREE.Vector3;
   life: number;
+  alive: boolean;
   update: () => void;
 }
 
@@ -26,9 +27,11 @@ const BULLET_CONFIGS: Record<BulletType, { color: number; size: number }> = {
 };
 
 export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
-  const meshRef = useRef<THREE.Mesh>(null!);
-  const positionRef = useRef(new THREE.Vector3(...props.initialPosition));
-  const velocityRef = useRef(
+  const meshRef = useRef<THREE.Mesh>(null);
+  const position = useConstant(
+    () => new THREE.Vector3(...props.initialPosition)
+  );
+  const velocity = useConstant(() =>
     new THREE.Vector3(...props.direction)
       .normalize()
       .multiplyScalar(CONFIG.bulletSpeed)
@@ -43,13 +46,10 @@ export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
       return meshRef.current;
     },
     get position() {
-      return positionRef.current;
+      return position;
     },
     get velocity() {
-      return velocityRef.current;
-    },
-    set velocity(value) {
-      velocityRef.current = value;
+      return velocity;
     },
     get alive() {
       return aliveRef.current;
@@ -64,10 +64,12 @@ export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
       lifeRef.current = value;
     },
     update: () => {
-      if (!aliveRef.current) return;
-      positionRef.current.add(velocityRef.current);
+      if (!aliveRef.current) {
+        return;
+      }
+      position.add(velocity);
       if (meshRef.current) {
-        meshRef.current.position.copy(positionRef.current);
+        meshRef.current.position.copy(position);
       }
       lifeRef.current--;
       if (lifeRef.current <= 0) {

@@ -10,7 +10,7 @@ interface WeaponState {
 
 export const useWeaponSystem = () => {
   const weaponRef = useRef<WeaponState>({
-    type: 'pistol',
+    type: 'machinegun',
     cooldown: 0,
     timer: 0,
   });
@@ -37,22 +37,30 @@ export const useWeaponSystem = () => {
       aimDir.normalize();
 
       const type = weaponRef.current.type;
+      switch (type) {
+        case 'shotgun':
+          // Shotgun logic
+          for (let i = 0; i < 5; i++) {
+            const dir = aimDir.clone();
+            const angle = (i - 2) * 0.15;
+            const x = dir.x * Math.cos(angle) - dir.z * Math.sin(angle);
+            const z = dir.x * Math.sin(angle) + dir.z * Math.cos(angle);
+            dir.set(x, 0, z);
+            addBullet(origin, dir, type);
+          }
+          weaponRef.current.cooldown = 45;
+          break;
+        case 'pistol':
+          addBullet(origin, aimDir, type);
+          weaponRef.current.cooldown = 15;
+          break;
+        case 'machinegun':
+          addBullet(origin, aimDir, type);
+          weaponRef.current.cooldown = 4;
+          break;
 
-      if (type === 'shotgun') {
-        // Shotgun logic
-        for (let i = -2; i <= 2; i++) {
-          const dir = aimDir.clone();
-          const angle = i * 0.15;
-          const x = dir.x * Math.cos(angle) - dir.z * Math.sin(angle);
-          const z = dir.x * Math.sin(angle) + dir.z * Math.cos(angle);
-          dir.set(x, 0, z);
-          addBullet(origin, dir, type);
-        }
-        weaponRef.current.cooldown = 45;
-      } else {
-        // Pistol / Machinegun logic
-        addBullet(origin, aimDir, type);
-        weaponRef.current.cooldown = type === 'machinegun' ? 4 : 15;
+        default:
+          break;
       }
     }
 

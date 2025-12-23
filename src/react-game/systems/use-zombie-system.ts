@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import * as THREE from 'three';
 import { type ZombieRef } from '../entities/zombie';
 import { useConstructor } from '../hooks';
+import { EventCenter } from '../core/event-center';
 
 export interface EntityState {
   id: string;
@@ -70,6 +71,31 @@ export const useZombieSystem = () => {
       spawnTimer.current = 0;
     }
   };
+
+  React.useEffect(() => {
+    return EventCenter.addEventListener('BULLET_UPDATE', (event) => {
+      const bullet = event.target;
+      const activeZombies = Array.from(zombieRefs.values());
+      // Check collision with zombies
+      for (const zombie of activeZombies) {
+        if (zombie.health <= 0) {
+          continue;
+        }
+
+        const dist = bullet.position.distanceTo(zombie.position);
+        if (dist < 2) {
+          // Hit radius
+          zombie.takeDamage(1);
+
+          if (zombie.health <= 0) {
+            removeZombie(zombie.id);
+            EventCenter.emit('ZOMBIE_KILLED', { id: zombie.id });
+          }
+          break; // Bullet hit one zombie
+        }
+      }
+    });
+  }, []);
 
   return {
     zombies,

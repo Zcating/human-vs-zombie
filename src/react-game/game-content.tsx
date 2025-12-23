@@ -37,13 +37,7 @@ export const GameContent: React.FC<GameContentProps> = ({
     registerBullet,
     update: updateBullets,
   } = useBulletSystem();
-  const {
-    zombies,
-    zombieRefs,
-    removeZombie,
-    registerZombie,
-    update: updateZombies,
-  } = useZombieSystem();
+  const { zombies, registerZombie, update: updateZombies } = useZombieSystem();
   const { weaponRef, update: updateWeapon } = useWeaponSystem();
   const { scoreRef, healthRef, gameOverRef } = useGameLogicSystem();
 
@@ -81,11 +75,7 @@ export const GameContent: React.FC<GameContentProps> = ({
     updateWeapon(input.fire, player.position, lookTarget, addBullet);
 
     // 3. Update Bullets & Check Collisions
-    const activeZombies = Array.from(zombieRefs.values());
-    updateBullets(activeZombies, (zombieId) => {
-      scoreRef.current += 10;
-      removeZombie(zombieId);
-    });
+    updateBullets();
 
     // 4. Update Zombies & Check Player Collision
     updateZombies(player.position, () => {
