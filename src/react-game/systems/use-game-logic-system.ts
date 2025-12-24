@@ -33,6 +33,13 @@ export const useGameLogicSystem = (invincibilityDuration: number = 1000) => {
     [invincibilityDuration]
   );
 
+  const heal = useCallback((amount: number) => {
+    if (gameOverRef.current) return;
+    const result = healthRef.current + amount;
+    healthRef.current = result >= 100 ? 100 : result;
+    EventCenter.emit('PLAYER_HIT', { target: healthRef.current });
+  }, []);
+
   const resetGame = useCallback(() => {
     scoreRef.current = 0;
     healthRef.current = 100;
@@ -45,6 +52,7 @@ export const useGameLogicSystem = (invincibilityDuration: number = 1000) => {
     healthRef,
     gameOverRef,
     takeDamage,
+    heal,
     resetGame,
   };
 };

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { isMobile } from '../../game/platform/device';
-// import { MobileControls } from '../../game/platform/mobile-controls';
 import { CONFIG } from '../../game/core/config';
 import { useConstant, useConstructor } from '../hooks';
 import type { PlayerRef } from '../entities/player';
@@ -12,6 +11,7 @@ export interface InputState {
   fire: boolean;
   lookTarget: THREE.Vector3 | null;
   origin: THREE.Vector3;
+  switchWeapon: boolean;
 }
 
 export const useInputSystem = (camera: THREE.Camera) => {
@@ -38,6 +38,7 @@ export const useInputSystem = (camera: THREE.Camera) => {
       look: input.look,
       lookTarget: input.lookTarget,
       origin: player.position.clone(),
+      switchWeapon: input.switchWeapon,
     };
   };
 
@@ -123,11 +124,18 @@ const useControls = (isMobile: boolean) => {
       lookTarget = target;
     }
 
+    // Check for weapon switch (Q key)
+    // We only want to trigger this once per press, but this is a continuous check loop.
+    // Ideally we should handle this via event or have a "justPressed" logic.
+    // For simplicity, we'll return true if held, and handle debounce in system.
+    const switchWeapon = !!keysRef.current['q'];
+
     return {
       fire: mouseDownRef.current,
       move,
       look,
       lookTarget,
+      switchWeapon,
     };
   };
 

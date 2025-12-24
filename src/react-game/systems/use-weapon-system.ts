@@ -78,7 +78,7 @@ export const useWeaponSystem = () => {
     const bullets: BulletState[] = [];
     switch (weaponState.type) {
       case 'shotgun':
-        weaponRef.current.cooldown = 45;
+        weaponState.cooldown = 45;
         // Shotgun logic
         for (let i = 0; i < 5; i++) {
           const dir = aimDir.clone();
@@ -92,13 +92,13 @@ export const useWeaponSystem = () => {
         }
         break;
       case 'pistol':
-        weaponRef.current.cooldown = 15;
+        weaponState.cooldown = 15;
         bullets.push(
           createBulletState(inputState.origin, aimDir, weaponState.type)
         );
         break;
       case 'machinegun':
-        weaponRef.current.cooldown = 4;
+        weaponState.cooldown = 4;
         bullets.push(
           createBulletState(inputState.origin, aimDir, weaponState.type)
         );

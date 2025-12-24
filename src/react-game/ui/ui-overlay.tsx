@@ -14,7 +14,14 @@ export const UIOverlay: React.FC = () => {
         </span>
       </div>
       <div>Score: {gameState.score}</div>
-      <div>Weapon: {gameState.weapon.type}</div>
+      <div>
+        Weapon: {gameState.weapon.type}
+        <span className="ml-2 text-yellow-400">
+          {gameState.weapon.type === 'pistol'
+            ? '∞'
+            : gameState.ammo[gameState.weapon.type]}
+        </span>
+      </div>
       <div>Zombies: {gameState.zombieCount}</div>
 
       {/* Simple Controls Info */}

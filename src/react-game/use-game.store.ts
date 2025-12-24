@@ -14,6 +14,10 @@ interface WeaponConfig {
   timer: number;
   // 射击冷却计时
   cooldown: number;
+  // 子弹数量 (null 表示无限)
+  ammo: number | null;
+  // 备弹
+  reserveAmmo: number;
 }
 
 export interface GameState {
@@ -25,7 +29,12 @@ export interface GameState {
   // 无敌时间剩余（毫秒）
   invincibleTimer: number;
   level: LevelConfig;
+  // 当前持有武器
   weapon: WeaponConfig;
+  // 拥有的武器列表
+  inventory: WeaponType[];
+  // 各武器弹药状态
+  ammo: Record<WeaponType, number>;
   // 丧尸数量
   zombieCount: number;
 }
@@ -43,6 +52,12 @@ export interface GameAction {
   playerHealth: (health: number) => void;
   // 切换武器
   switchWeapon: (weaponType: WeaponType) => void;
+  // 获得武器
+  addWeapon: (weaponType: WeaponType) => void;
+  // 消耗弹药
+  consumeAmmo: () => void;
+  // 增加弹药
+  addAmmo: (weaponType: WeaponType, amount: number) => void;
   // 更新武器冷却时间
   updateWeaponCooldown: () => void;
   // 更新武器特殊时间
@@ -62,6 +77,14 @@ const initGameState: GameState = {
     type: 'pistol' as WeaponType,
     timer: 0, // 特殊武器剩余时间（帧）
     cooldown: 15, // 射击冷却计时
+    ammo: null, // 无限弹药
+    reserveAmmo: 0,
+  },
+  inventory: ['pistol'],
+  ammo: {
+    pistol: 9999,
+    machinegun: 60,
+    shotgun: 20,
   },
   // 关卡系统相关
   level: {
@@ -71,7 +94,7 @@ const initGameState: GameState = {
   },
 };
 
-export const useGameStore = create<GameState & GameAction>((set) => ({
+export const useGameStore = create<GameState & GameAction>((set, get) => ({
   ...initGameState,
   // 游戏开始
   startGame: () => set({ gameStarted: true }),
@@ -85,8 +108,57 @@ export const useGameStore = create<GameState & GameAction>((set) => ({
   // 玩家健康值设置
   playerHealth: (health: number) => set({ health }),
   // 切换武器
-  switchWeapon: (weaponType: WeaponType) =>
-    set({ weapon: { ...initGameState.weapon, type: weaponType } }),
+  switchWeapon: (weaponType: WeaponType) => {
+    const state = get();
+    if (!state.inventory.includes(weaponType)) {
+      return;
+    }
+
+    set({
+      weapon: {
+        ...state.weapon,
+        type: weaponType,
+        ammo: weaponType === 'pistol' ? null : state.ammo[weaponType],
+      },
+    });
+  },
+  // 获得武器
+  addWeapon: (weaponType: WeaponType) => {
+    const state = get();
+    if (!state.inventory.includes(weaponType)) {
+      set({ inventory: [...state.inventory, weaponType] });
+    }
+    // 增加对应弹药
+    const addAmount = weaponType === 'machinegun' ? 60 : 20;
+    get().addAmmo(weaponType, addAmount);
+  },
+  // 消耗弹药
+  consumeAmmo: () => {
+    const state = get();
+    const currentWeapon = state.weapon.type;
+    if (currentWeapon === 'pistol') return; // 手枪无限子弹
+
+    const currentAmmo = state.ammo[currentWeapon];
+    if (currentAmmo > 0) {
+      const newAmmo = currentAmmo - 1;
+      set({
+        ammo: { ...state.ammo, [currentWeapon]: newAmmo },
+        weapon: { ...state.weapon, ammo: newAmmo },
+      });
+    }
+  },
+  // 增加弹药
+  addAmmo: (weaponType: WeaponType, amount: number) => {
+    const state = get();
+    const newAmmo = state.ammo[weaponType] + amount;
+    set({
+      ammo: { ...state.ammo, [weaponType]: newAmmo },
+      weapon: {
+        ...state.weapon,
+        ammo: state.weapon.type === weaponType ? newAmmo : state.weapon.ammo,
+      },
+    });
+  },
   // 更新武器冷却时间
   updateWeaponCooldown: () =>
     set((state) => ({
