@@ -51,10 +51,6 @@ export const GameContent: React.FC = () => {
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[50, 100, 50]} intensity={0.6} castShadow />
-      <gridHelper args={[200, 50, 0x444444, 0x333333]} position={[0, 0, 0]} />
-
       <Player ref={playerRef} position={[0, 1, 0]} />
 
       {zombies.map((z) => (
