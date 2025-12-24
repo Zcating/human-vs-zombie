@@ -19,7 +19,7 @@ export const ReactGame: React.FC = () => {
         // TODO: 根据 event.target 调整玩家血量
         useGameStore.getState().playerHealth(event.target);
       }),
-      EventCenter.addEventListener('ZOMBIE_KILLED', (event) => {
+      EventCenter.addEventListener('ZOMBIE_KILLED', () => {
         // TODO: 根据 event.target.type 奖励不同分数
         useGameStore.getState().playerScored(10);
       }),

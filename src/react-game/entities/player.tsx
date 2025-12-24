@@ -1,5 +1,6 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
 import { CONFIG } from '../../game/core/config';
 
 export interface PlayerRef {
@@ -8,6 +9,7 @@ export interface PlayerRef {
   position: THREE.Vector3;
   velocity: THREE.Vector3;
   update: (move: THREE.Vector3, look: THREE.Vector3 | null) => void;
+  flash: (duration: number) => void;
 }
 
 interface PlayerProps {
@@ -24,6 +26,7 @@ export const Player = forwardRef<PlayerRef, PlayerProps>((props, ref) => {
   const velocityRef = useRef(new THREE.Vector3());
   const positionRef = useRef(new THREE.Vector3());
   const gunMatRef = useRef<THREE.MeshBasicMaterial>(null!);
+  const flashEndTimeRef = useRef(0);
 
   // 创建玩家几何体和材质
   const playerGeometry = new THREE.BoxGeometry(2, 2, 2);
@@ -43,7 +46,21 @@ export const Player = forwardRef<PlayerRef, PlayerProps>((props, ref) => {
     update: (move: THREE.Vector3, look: THREE.Vector3 | null) => {
       updatePlayer(move, look);
     },
+    flash: (duration: number) => {
+      flashEndTimeRef.current = Date.now() + duration;
+    },
   }));
+
+  useFrame(() => {
+    if (meshRef.current) {
+      if (Date.now() < flashEndTimeRef.current) {
+        // Flash every 100ms
+        meshRef.current.visible = Math.floor(Date.now() / 100) % 2 === 0;
+      } else {
+        meshRef.current.visible = true;
+      }
+    }
+  });
 
   /**
    * 更新玩家状态

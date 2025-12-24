@@ -9,20 +9,19 @@ import { useZombieSystem } from './systems/use-zombie-system';
 import { useWeaponSystem } from './systems/use-weapon-system';
 import { useGameLogicSystem } from './systems/use-game-logic-system';
 
-import { EventCenter } from './core/event-center';
-
 export const GameContent: React.FC = () => {
   const { camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
 
   // Systems
   const { updateCamera } = useInputSystem(camera);
-  const { weaponType, changeWeapon, createBullets } = useWeaponSystem();
+  const { createBullets } = useWeaponSystem();
   const { bullets, registerBullet, updateBullets } = useBulletSystem();
   const { zombies, registerZombie, updateZombies } = useZombieSystem();
-  const { healthRef, gameOverRef } = useGameLogicSystem();
+  // 1 second invincibility
+  const { gameOverRef, takeDamage } = useGameLogicSystem(1000);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (gameOverRef.current) {
       return;
     }
@@ -44,16 +43,8 @@ export const GameContent: React.FC = () => {
     // 4. Update Zombies & Check Player Collision
     updateZombies(player.position, () => {
       // Player hit
-      // Implement invincible/damage logic here
-      // For simplicity:
-      const result = healthRef.current - 1;
-      healthRef.current = result <= 0 ? 0 : result;
-      // 玩家当前的健康值
-      EventCenter.emit('PLAYER_HIT', { target: healthRef.current });
-
-      if (healthRef.current === 0) {
-        gameOverRef.current = true;
-        EventCenter.emit('GAME_OVER');
+      if (takeDamage(1)) {
+        playerRef.current?.flash(1000);
       }
     });
   });
