@@ -1,1 +1,5 @@
 @import 'tailwindcss';
+
+body {
+  @apply m-0 overflow-hidden bg-[#f4e8d0] font-sans touch-none;
+}

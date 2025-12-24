@@ -16,7 +16,7 @@ export const ReactGame: React.FC = () => {
   });
 
   return (
-    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+    <div className="w-full h-screen relative">
       <Canvas
         camera={{
           position: [0, CONFIG.camHeight, CONFIG.camDist],
@@ -24,7 +24,7 @@ export const ReactGame: React.FC = () => {
           up: [0, 0, -1],
         }}
         shadows
-        style={{ background: '#f4e8d0' }}
+        className="bg-[#f4e8d0]"
         onCreated={({ scene }) => {
           scene.fog = new THREE.Fog(0xf4e8d0, 60, 200);
         }}
@@ -35,35 +35,12 @@ export const ReactGame: React.FC = () => {
       <UIOverlay gameState={gameState} />
 
       {gameState.gameOver && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            zIndex: 1000,
-          }}
-        >
+        <div className="absolute top-0 left-0 w-full h-full bg-black/70 flex flex-col items-center justify-center text-white z-[1000]">
           <h1>GAME OVER</h1>
           <h2>Score: {gameState.score}</h2>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 20px',
-              fontSize: '20px',
-              cursor: 'pointer',
-              background: '#ff0000',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-            }}
+            className="px-5 py-2.5 text-xl cursor-pointer bg-red-600 text-white border-none rounded mt-4"
           >
             Restart
           </button>

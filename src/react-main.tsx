@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ReactGame } from './react-game/react-game';
-import './styles/game.css';
 
 /**
  * React版本的入口文件
