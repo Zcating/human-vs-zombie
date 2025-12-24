@@ -8,24 +8,19 @@ import { useBulletSystem } from './systems/use-bullet-system';
 import { useZombieSystem } from './systems/use-zombie-system';
 import { useWeaponSystem } from './systems/use-weapon-system';
 import { useGameLogicSystem } from './systems/use-game-logic-system';
-import { type GameState } from './types';
 
-interface GameContentProps {
-  onGameStateChange: (state: GameState) => void;
-}
+import { EventCenter } from './core/event-center';
 
-export const GameContent: React.FC<GameContentProps> = ({
-  onGameStateChange,
-}) => {
+export const GameContent: React.FC = () => {
   const { camera } = useThree();
   const playerRef = useRef<PlayerRef>(null);
 
   // Systems
   const { updateCamera } = useInputSystem(camera);
-  const { weaponType, createBullets } = useWeaponSystem();
+  const { weaponType, changeWeapon, createBullets } = useWeaponSystem();
   const { bullets, registerBullet, updateBullets } = useBulletSystem();
-  const { zombies, registerZombie, update: updateZombies } = useZombieSystem();
-  const { scoreRef, healthRef, gameOverRef } = useGameLogicSystem();
+  const { zombies, registerZombie, updateZombies } = useZombieSystem();
+  const { healthRef, gameOverRef } = useGameLogicSystem();
 
   useFrame((state) => {
     if (gameOverRef.current) {
@@ -51,33 +46,16 @@ export const GameContent: React.FC<GameContentProps> = ({
       // Player hit
       // Implement invincible/damage logic here
       // For simplicity:
-      healthRef.current -= 0.5; // Drain health fast
-      if (healthRef.current <= 0) {
-        healthRef.current = 0;
+      const result = healthRef.current - 1;
+      healthRef.current = result <= 0 ? 0 : result;
+      // 玩家当前的健康值
+      EventCenter.emit('PLAYER_HIT', { target: healthRef.current });
+
+      if (healthRef.current === 0) {
         gameOverRef.current = true;
-        onGameStateChange({
-          health: Math.floor(healthRef.current),
-          score: scoreRef.current,
-          weapon: weaponType,
-          zombieCount: zombies.length,
-          gameOver: gameOverRef.current,
-        });
+        EventCenter.emit('GAME_OVER');
       }
     });
-
-    // 5. Spawning Logic (moved to useZombieSystem)
-
-    // 6. Sync UI State (throttle this if needed)
-    if (state.clock.getElapsedTime() % 0.5 < 0.02) {
-      // Sync every ~0.5s
-      onGameStateChange({
-        health: Math.floor(healthRef.current),
-        score: scoreRef.current,
-        weapon: weaponType,
-        zombieCount: zombies.length,
-        gameOver: gameOverRef.current,
-      });
-    }
   });
 
   return (

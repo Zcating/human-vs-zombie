@@ -5,17 +5,27 @@ export type EventTypeArgsMap = {
   BULLET_UPDATE: {
     target: BulletRef;
   };
+  ZOMBIE_COUNT: {
+    count: number;
+  };
   ZOMBIE_UPDATE: {
     target: ZombieRef;
   };
   ZOMBIE_KILLED: {
-    id: string;
+    target: ZombieRef;
   };
+  PLAYER_HIT: {
+    target: number;
+  };
+
+  GAME_OVER: undefined;
 };
 
 type EventType = keyof EventTypeArgsMap;
-
 type Teardown = () => void;
+type OptionalEventArgs<T extends EventType> =
+  EventTypeArgsMap[T] extends undefined ? [] : [EventTypeArgsMap[T]];
+
 const eventListeners = new Map<EventType, ((event: unknown) => void)[]>();
 
 /**
@@ -55,13 +65,13 @@ function addEventListener<T extends EventType>(
  * @param event 事件数据
  * @returns void
  */
-function emit<T extends EventType>(type: T, event: EventTypeArgsMap[T]) {
+function emit<T extends EventType>(type: T, ...args: OptionalEventArgs<T>) {
   const listeners = eventListeners.get(type);
   if (!listeners) {
     return;
   }
 
-  listeners.forEach((callback) => callback(event));
+  listeners.forEach((callback) => callback(args[0]));
 }
 
 export const EventCenter = {

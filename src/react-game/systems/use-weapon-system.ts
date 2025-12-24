@@ -21,10 +21,10 @@ function createBulletState(
   const id = generateId();
   return {
     id,
-    position: [pos.x, pos.y, pos.z] as const,
-    direction: [dir.x, dir.y, dir.z] as const,
+    position: [pos.x, pos.y, pos.z],
+    direction: [dir.x, dir.y, dir.z],
     type,
-  };
+  } satisfies BulletState;
 }
 
 interface WeaponState {
@@ -35,10 +35,14 @@ interface WeaponState {
 
 export const useWeaponSystem = () => {
   const weaponRef = useRef<WeaponState>({
-    type: 'machinegun',
+    type: 'pistol',
     cooldown: 0,
     timer: 0,
   });
+
+  const changeWeapon = (type: WeaponType) => {
+    weaponRef.current.type = type;
+  };
 
   const createBullets = (inputState: InputState): BulletState[] => {
     // Cooldown management
@@ -107,6 +111,7 @@ export const useWeaponSystem = () => {
 
   return {
     weaponType: weaponRef.current.type,
+    changeWeapon,
     createBullets,
   };
 };

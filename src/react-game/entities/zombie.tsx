@@ -9,6 +9,8 @@ import { useConstant, useConstructor } from '../hooks';
 const loader = new THREE.TextureLoader();
 const texture = loader.load(enemyImg);
 
+type ZombieType = 'normal' | 'fast' | 'slow';
+
 export interface ZombieRef {
   readonly id: string;
   readonly mesh: THREE.Sprite;
@@ -17,6 +19,7 @@ export interface ZombieRef {
   readonly acceleration: THREE.Vector3;
   readonly health: number;
   readonly maxHealth: number;
+  readonly type: ZombieType;
   takeDamage: (damage: number) => boolean;
   applyBehaviors: (zombies: ZombieRef[], playerPos: THREE.Vector3) => void;
   update: () => void;
@@ -26,6 +29,7 @@ interface ZombieProps {
   id: string;
   health?: number;
   texture?: THREE.Texture;
+  type?: ZombieType;
   initialPosition?: [number, number, number];
   onPositionChange?: (position: THREE.Vector3) => void;
 }
@@ -45,6 +49,7 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
   const healthBarRef = useRef<HealthBarRef | null>(null);
   const currentHealthRef = useRef(props.health || 1);
   const maxHealthRef = useRef(props.health || 1);
+  const typeRef = useRef(props.type || 'normal');
 
   // 创建丧尸纹理（如果没有提供）
   const createDefaultTexture = () => {
@@ -188,6 +193,9 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
     },
     get maxHealth() {
       return maxHealthRef.current;
+    },
+    get type() {
+      return typeRef.current;
     },
     takeDamage,
     applyBehaviors,

@@ -1,11 +1,9 @@
 import React from 'react';
-import { type GameState } from '../types';
+import { useGameStore } from '../use-game.store';
 
-interface UIOverlayProps {
-  gameState: GameState;
-}
+export const UIOverlay: React.FC = () => {
+  const gameState = useGameStore((state) => state);
 
-export const UIOverlay: React.FC<UIOverlayProps> = ({ gameState }) => {
   return (
     <div className="absolute top-5 left-5 text-white text-base z-100 pointer-events-none font-mono">
       <div className="mb-2.5">React-Three-Fiber Remake</div>
@@ -16,7 +14,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({ gameState }) => {
         </span>
       </div>
       <div>Score: {gameState.score}</div>
-      <div>Weapon: {gameState.weapon}</div>
+      <div>Weapon: {gameState.weapon.type}</div>
       <div>Zombies: {gameState.zombieCount}</div>
 
       {/* Simple Controls Info */}

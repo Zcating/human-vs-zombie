@@ -46,7 +46,7 @@ export const useZombieSystem = () => {
     }
   };
 
-  const update = (playerPos: THREE.Vector3, onPlayerHit: () => void) => {
+  const updateZombies = (playerPos: THREE.Vector3, onPlayerHit: () => void) => {
     const activeZombies = Array.from(zombieRefs.values());
 
     // Update Zombies & Check Player Collision
@@ -74,6 +74,7 @@ export const useZombieSystem = () => {
     return EventCenter.addEventListener('BULLET_UPDATE', (event) => {
       const bullet = event.target;
       const activeZombies = Array.from(zombieRefs.values());
+
       // Check collision with zombies
       for (const zombie of activeZombies) {
         if (zombie.health <= 0) {
@@ -81,13 +82,14 @@ export const useZombieSystem = () => {
         }
 
         const dist = bullet.position.distanceTo(zombie.position);
-        if (dist < 2) {
+        if (dist < 4) {
           // Hit radius
           zombie.takeDamage(1);
+          bullet.alive = false;
 
           if (zombie.health <= 0) {
             removeZombie(zombie.id);
-            EventCenter.emit('ZOMBIE_KILLED', { id: zombie.id });
+            EventCenter.emit('ZOMBIE_KILLED', { target: zombie });
           }
           break; // Bullet hit one zombie
         }
@@ -95,10 +97,13 @@ export const useZombieSystem = () => {
     });
   }, []);
 
+  React.useEffect(() => {
+    EventCenter.emit('ZOMBIE_COUNT', { count: zombies.length });
+  }, [zombies]);
+
   return {
     zombies,
-    zombieRefs,
     registerZombie,
-    update,
+    updateZombies,
   };
 };

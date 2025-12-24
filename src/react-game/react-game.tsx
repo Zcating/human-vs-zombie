@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../game/core/config';
-import { type GameState } from './types';
 import { GameContent } from './game-content';
 import { UIOverlay } from './ui/ui-overlay';
+import { useGameStore } from './use-game.store';
+import { EventCenter } from './core/event-center';
 
 export const ReactGame: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    health: 100,
-    score: 0,
-    weapon: 'pistol',
-    zombieCount: 0,
-    gameOver: false,
-  });
+  const gameState = useGameStore((state) => state);
+
+  React.useEffect(() => {
+    const subs = [
+      EventCenter.addEventListener('GAME_OVER', () => {
+        useGameStore.getState().endGame();
+      }),
+      EventCenter.addEventListener('PLAYER_HIT', (event) => {
+        // TODO: 根据 event.target 调整玩家血量
+        useGameStore.getState().playerHealth(event.target);
+      }),
+      EventCenter.addEventListener('ZOMBIE_KILLED', (event) => {
+        // TODO: 根据 event.target.type 奖励不同分数
+        useGameStore.getState().playerScored(10);
+      }),
+      EventCenter.addEventListener('ZOMBIE_COUNT', (event) => {
+        // TODO: 根据 event.target 更新 zombieCount
+        useGameStore.getState().updateZombieCount(event.count);
+      }),
+    ];
+    return () => {
+      subs.forEach((sub) => sub());
+    };
+  }, []);
 
   return (
     <div className="w-full h-screen relative">
@@ -29,10 +47,10 @@ export const ReactGame: React.FC = () => {
           scene.fog = new THREE.Fog(0xf4e8d0, 60, 200);
         }}
       >
-        <GameContent onGameStateChange={setGameState} />
+        <GameContent />
       </Canvas>
 
-      <UIOverlay gameState={gameState} />
+      <UIOverlay />
 
       {gameState.gameOver && (
         <div className="absolute top-0 left-0 w-full h-full bg-black/70 flex flex-col items-center justify-center text-white z-[1000]">

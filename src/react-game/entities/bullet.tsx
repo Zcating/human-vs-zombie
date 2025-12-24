@@ -21,9 +21,9 @@ interface BulletProps {
 }
 
 const BULLET_CONFIGS: Record<WeaponType, { color: number; size: number }> = {
-  pistol: { color: 0x000000, size: 0.5 },
-  machinegun: { color: 0x00d2ff, size: 0.5 },
-  shotgun: { color: 0xffaa00, size: 0.9 },
+  pistol: { color: 0x000000, size: 0.9 },
+  machinegun: { color: 0x00d2ff, size: 0.9 },
+  shotgun: { color: 0xffaa00, size: 1.2 },
 };
 
 export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
@@ -80,7 +80,7 @@ export const Bullet = forwardRef<BulletRef, BulletProps>((props, ref) => {
 
   return (
     <mesh ref={meshRef} position={props.initialPosition}>
-      <sphereGeometry args={[config.size, 4, 4]} />
+      <sphereGeometry args={[config.size, 100, 100]} />
       <meshBasicMaterial color={config.color} />
     </mesh>
   );
