@@ -4,7 +4,7 @@ import { type ZombieRef } from '../entities/zombie';
 import { useConstructor } from '../hooks';
 import { EventCenter } from '../core/event-center';
 
-export interface EntityState {
+export interface ZombieState {
   id: string;
   initialPosition: [number, number, number];
   health: number;
@@ -12,9 +12,16 @@ export interface EntityState {
 
 let nextId = 0;
 const generateId = () => `zombie_${nextId++}`;
+const createZombie = (x: number, z: number, health: number = 10) =>
+  ({
+    id: generateId(),
+    initialPosition: [x, 4, z],
+    // Base health
+    health: health,
+  }) satisfies ZombieState;
 
 export const useZombieSystem = () => {
-  const [zombies, setZombies] = useState<EntityState[]>([]);
+  const [zombies, setZombies] = useState<ZombieState[]>([]);
   const zombieRefs = useConstructor<Map<string, ZombieRef>>(Map);
   const spawnTimer = useRef(0);
 
@@ -23,16 +30,7 @@ export const useZombieSystem = () => {
     const radius = 90 + Math.random() * 30;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
-
-    const id = generateId();
-    setZombies((prev) => [
-      ...prev,
-      {
-        id,
-        initialPosition: [x, 4, z],
-        health: 10, // Base health
-      },
-    ]);
+    setZombies((prev) => [...prev, createZombie(x, z)]);
   };
 
   const removeZombie = (id: string) => {

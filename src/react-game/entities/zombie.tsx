@@ -125,10 +125,7 @@ export const Zombie = forwardRef<ZombieRef, ZombieProps>((props, ref) => {
       healthBarRef.current.setHealth(currentHealthRef.current);
     }
 
-    if (currentHealthRef.current <= 0) {
-      return true; // 丧尸死亡
-    }
-    return false; // 丧尸存活
+    return currentHealthRef.current <= 0;
   };
 
   /**
